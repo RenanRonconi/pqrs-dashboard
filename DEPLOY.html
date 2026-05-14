@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>PQRS — Como subir o dashboard para internet</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #0a0e1a; color: #e8eaf6;
+    max-width: 900px; margin: 0 auto; padding: 40px 30px 80px;
+    line-height: 1.7;
+  }
+  h1 {
+    background: linear-gradient(90deg, #00d9ff, #7c4dff);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    font-size: 2.2rem; margin-bottom: 8px;
+  }
+  h2 {
+    color: #00d9ff; margin-top: 36px; padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  h3 { color: #ffd700; margin-top: 22px; }
+  code, pre {
+    background: #1c2138; border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 6px; padding: 2px 8px;
+    font-family: Consolas, 'Courier New', monospace;
+    font-size: 0.92em;
+  }
+  pre {
+    padding: 14px 18px; overflow-x: auto;
+    border-left: 3px solid #00d9ff;
+  }
+  a { color: #00d9ff; }
+  .step {
+    background: #131829; border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px; padding: 20px 26px; margin: 16px 0;
+  }
+  .step-num {
+    display: inline-block; background: linear-gradient(135deg, #00d9ff, #7c4dff);
+    color: white; width: 28px; height: 28px; border-radius: 50%;
+    text-align: center; line-height: 28px; font-weight: 900;
+    margin-right: 10px;
+  }
+  .warn {
+    background: rgba(255, 179, 0, 0.1); border-left: 4px solid #ffb300;
+    padding: 12px 18px; border-radius: 4px; margin: 16px 0;
+  }
+  .ok {
+    background: rgba(0, 230, 118, 0.1); border-left: 4px solid #00e676;
+    padding: 12px 18px; border-radius: 4px; margin: 16px 0;
+  }
+  strong { color: #ffd700; }
+</style>
+</head>
+<body>
+  <h1>🌐 Publicar o Dashboard PQRS na Internet</h1>
+  <p style="color:#9ba3b8;">Guia passo a passo para hospedar o dashboard na <strong>Vercel</strong> — gratuito, em ~10 minutos, com URL própria acessível de qualquer dispositivo.</p>
+
+  <h2>Por que Vercel?</h2>
+  <ul>
+    <li>✅ <strong>Grátis</strong> para projetos pessoais (sem cartão de crédito)</li>
+    <li>✅ Deploy em segundos com 1 clique</li>
+    <li>✅ HTTPS automático (cadeado verde)</li>
+    <li>✅ URL final fica <code>seuapp.vercel.app</code> (ou domínio próprio se quiser)</li>
+    <li>✅ Atualizações automáticas — basta dar <code>git push</code></li>
+  </ul>
+
+  <h2>📦 O que já está pronto</h2>
+  <p>O projeto já tem tudo configurado:</p>
+  <ul>
+    <li><code>vercel.json</code> → headers de cache otimizados</li>
+    <li><code>.gitignore</code> → ignora arquivos desnecessários</li>
+    <li><code>index.html</code>, <code>config.html</code>, <code>style.css</code>, <code>dashboard.js</code>, <code>config.js</code></li>
+  </ul>
+
+  <div class="warn">
+    ⚠ <strong>O backend continua no Apps Script</strong> (Google). A Vercel só hospeda a interface visual. Os dados continuam vindo da sua URL atual de Apps Script — você não precisa migrar nada do Google.
+  </div>
+
+  <h2>🚀 Caminho rápido (recomendado): GitHub + Vercel</h2>
+
+  <div class="step">
+    <h3><span class="step-num">1</span>Criar conta no GitHub (se ainda não tem)</h3>
+    <p>Acesse <a href="https://github.com/signup" target="_blank">github.com/signup</a> e crie uma conta com seu email. Demora 2 minutos.</p>
+  </div>
+
+  <div class="step">
+    <h3><span class="step-num">2</span>Instalar o GitHub Desktop</h3>
+    <p>Baixe em <a href="https://desktop.github.com/" target="_blank">desktop.github.com</a> — é o jeito mais fácil de subir os arquivos sem usar terminal.</p>
+    <p>Faça login com sua conta GitHub.</p>
+  </div>
+
+  <div class="step">
+    <h3><span class="step-num">3</span>Criar repositório a partir da pasta do projeto</h3>
+    <ol>
+      <li>Abra o <strong>GitHub Desktop</strong></li>
+      <li>Menu <em>File → Add local repository</em></li>
+      <li>Escolha a pasta <code>C:\Users\Advogada\pqrs-dashboard</code></li>
+      <li>Se aparecer "This directory does not appear to be a Git repository", clique em <strong>"create a repository"</strong></li>
+      <li>Preencha:
+        <ul>
+          <li>Name: <code>pqrs-dashboard</code></li>
+          <li>Local Path: já está preenchido</li>
+          <li>Deixe os demais campos em branco</li>
+        </ul>
+      </li>
+      <li>Clique em <strong>"Create Repository"</strong></li>
+      <li>No canto inferior esquerdo, escreva um Summary qualquer (ex: <em>"versão inicial"</em>) e clique em <strong>"Commit to main"</strong></li>
+      <li>No topo, clique em <strong>"Publish repository"</strong></li>
+      <li>Desmarque "Keep this code private" se quiser (Vercel grátis também aceita repositórios privados, então pode deixar marcado se preferir)</li>
+      <li>Clique <strong>"Publish Repository"</strong></li>
+    </ol>
+    <p>Pronto — seus arquivos estão no GitHub.</p>
+  </div>
+
+  <div class="step">
+    <h3><span class="step-num">4</span>Conectar Vercel ao GitHub</h3>
+    <ol>
+      <li>Acesse <a href="https://vercel.com/signup" target="_blank">vercel.com/signup</a></li>
+      <li>Clique em <strong>"Continue with GitHub"</strong> e autorize</li>
+      <li>Você cai no dashboard da Vercel</li>
+      <li>Clique em <strong>"Add New..." → "Project"</strong></li>
+      <li>Localize <code>pqrs-dashboard</code> e clique em <strong>"Import"</strong></li>
+      <li>Deixe TUDO no padrão (não mexa em build, output, etc — é um site estático)</li>
+      <li>Clique em <strong>"Deploy"</strong></li>
+    </ol>
+    <p>Espere ~30 segundos. Vai aparecer fogos de artifício e uma URL tipo <code>pqrs-dashboard-xxx.vercel.app</code>.</p>
+  </div>
+
+  <div class="step">
+    <h3><span class="step-num">5</span>Testar</h3>
+    <p>Abra a URL no celular, na TV, em outro computador — o dashboard carrega normalmente e puxa os dados do Pipedrive em tempo real.</p>
+    <p>A URL <code>seuapp.vercel.app/config.html</code> abre as configurações.</p>
+  </div>
+
+  <div class="ok">
+    ✅ <strong>Pronto!</strong> Dashboard 100% acessível da internet. Toque para fixar na tela inicial do celular como se fosse um app, ou aponte a SmartTV para essa URL.
+  </div>
+
+  <h2>🔄 Como atualizar depois?</h2>
+  <p>Quando você (ou eu, no Claude Code) editar qualquer arquivo do projeto:</p>
+  <ol>
+    <li>Abra o <strong>GitHub Desktop</strong></li>
+    <li>Você verá os arquivos modificados na coluna esquerda</li>
+    <li>Escreva um Summary (ex: <em>"ajuste de cor"</em>) e clique em <strong>"Commit to main"</strong></li>
+    <li>Clique em <strong>"Push origin"</strong> no topo</li>
+  </ol>
+  <p>A Vercel detecta automaticamente e redeploya em ~20 segundos. Sua URL fica atualizada sozinha.</p>
+
+  <h2>🎨 Quero um domínio personalizado?</h2>
+  <p>Se quiser <code>dashboard.suaempresa.com.br</code> ao invés de <code>vercel.app</code>:</p>
+  <ol>
+    <li>Compre o domínio em Registro.br ou GoDaddy (~R$ 40/ano)</li>
+    <li>Na Vercel: <strong>Project Settings → Domains → Add</strong></li>
+    <li>Digite o domínio que você comprou</li>
+    <li>Vercel mostra 2 registros DNS para você adicionar no painel do seu domínio</li>
+    <li>Em alguns minutos, o domínio fica funcionando com HTTPS automático</li>
+  </ol>
+
+  <h2>📺 Para a TV da sala</h2>
+  <p>Modo recomendado:</p>
+  <ol>
+    <li>Use um <strong>Chromecast</strong> ou <strong>Fire TV Stick</strong> conectado à TV</li>
+    <li>Abra a URL <code>seuapp.vercel.app</code> no Chrome do computador</li>
+    <li>Clique nos 3 pontos → "Cast" → escolha a TV</li>
+    <li>Ative o modo Tela Cheia (F11)</li>
+  </ol>
+  <p>Ou, se a TV for SmartTV moderna com navegador:</p>
+  <ol>
+    <li>Abra o navegador da TV</li>
+    <li>Digite a URL diretamente</li>
+    <li>Ative tela cheia</li>
+  </ol>
+
+  <h2>🆘 Problemas comuns</h2>
+
+  <h3>"Não consigo abrir a URL"</h3>
+  <p>Espere 1 minuto após o deploy. Se ainda não abrir, na Vercel veja a aba <em>Deployments</em> — clique no último deploy e veja se aparece "Ready" (verde).</p>
+
+  <h3>"O dashboard carrega vazio na internet"</h3>
+  <p>Verifique se o <code>config.js</code> tem a URL correta do Apps Script (a mesma que funciona localmente). Se sim, está tudo certo.</p>
+
+  <h3>"Quero esconder a URL de visitas externas"</h3>
+  <p>Na Vercel, vá em <em>Project Settings → Deployment Protection</em> e ative "Vercel Authentication". Só quem você convidar verá o dashboard.</p>
+
+</body>
+</html>

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>PQRS — Configurações</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { overflow: auto; padding: 40px; }
+    .config-container {
+      max-width: 1000px; margin: 0 auto;
+      display: flex; flex-direction: column; gap: 28px;
+    }
+    .config-section {
+      background: linear-gradient(135deg, var(--bg-2), var(--bg-3));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+    }
+    .config-section h2 {
+      font-size: 1.4rem;
+      margin-bottom: 20px;
+      color: var(--accent);
+    }
+    .field { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+    label { color: var(--text-dim); font-size: 0.9rem; font-weight: 600; }
+    input, select, textarea {
+      background: var(--bg-1);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: var(--text);
+      font-size: 1rem;
+      font-family: inherit;
+    }
+    input:focus, select:focus { outline: 2px solid var(--accent); }
+    button {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 24px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    button:hover { transform: translateY(-2px); }
+    button.danger { background: linear-gradient(135deg, var(--red), #c62828); }
+    button.secondary { background: var(--bg-3); border: 1px solid var(--border); }
+    .vendedor-card {
+      display: grid;
+      grid-template-columns: 80px 2fr 2fr 1fr 1fr auto;
+      gap: 12px;
+      align-items: center;
+      background: var(--bg-1);
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+    .vendedor-card img {
+      width: 60px; height: 60px; border-radius: 50%; object-fit: cover;
+      background: var(--bg-3);
+    }
+    .vendedor-card input, .vendedor-card select { padding: 8px 12px; font-size: 0.95rem; }
+    .add-btn {
+      width: 100%;
+      padding: 14px;
+      background: rgba(0, 217, 255, 0.1);
+      border: 2px dashed var(--accent);
+      color: var(--accent);
+      cursor: pointer;
+      border-radius: 10px;
+      font-weight: 700;
+    }
+    .back-link {
+      display: inline-block;
+      margin-bottom: 20px;
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .msg {
+      padding: 14px 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-weight: 600;
+    }
+    .msg.ok { background: rgba(0, 230, 118, 0.15); color: var(--green); border: 1px solid var(--green); }
+    .msg.err { background: rgba(255, 82, 82, 0.15); color: var(--red); border: 1px solid var(--red); }
+    .actions { display: flex; gap: 12px; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="config-container">
+    <a href="index.html" class="back-link">← Voltar ao dashboard</a>
+    <h1 style="font-size:2rem; background: linear-gradient(90deg, var(--accent), var(--accent-2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">⚙ Configurações</h1>
+
+    <div id="msg-area"></div>
+
+    <!-- Metas Mensais (separadas por área) -->
+    <div class="config-section">
+      <h2>🎯 Metas do Mês</h2>
+      <p style="color:var(--text-dim); margin-bottom:20px;">
+        Cada área tem sua própria meta independente. Os números aparecem no dashboard como progresso de cada área.
+      </p>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 18px;">
+        <div class="field" style="background: rgba(0,217,255,0.05); border:1px solid var(--trabalhista); border-radius:10px; padding:18px;">
+          <label style="color: var(--trabalhista); font-weight:700;">⚖️ Meta Trabalhista</label>
+          <input type="number" id="meta-trab-input" min="1" placeholder="40">
+        </div>
+        <div class="field" style="background: rgba(255,107,53,0.05); border:1px solid var(--servidor); border-radius:10px; padding:18px;">
+          <label style="color: var(--servidor); font-weight:700;">🏛️ Meta Servidor Público</label>
+          <input type="number" id="meta-serv-input" min="1" placeholder="20">
+        </div>
+      </div>
+      <button onclick="salvarMetas()" style="margin-top:18px;">Salvar metas</button>
+    </div>
+
+    <!-- Tempo de rotação dos slides -->
+    <div class="config-section">
+      <h2>⏱️ Rotação dos Slides</h2>
+      <p style="color:var(--text-dim); margin-bottom:20px;">
+        Quanto tempo cada slide fica na tela antes de passar para o próximo (em segundos).
+      </p>
+      <div class="field">
+        <label>Duração de cada slide</label>
+        <div style="display:flex; gap:12px; align-items:center;">
+          <input type="number" id="intervalo-input" min="3" max="120" step="1" placeholder="15" style="max-width:200px;">
+          <span style="color:var(--text-dim);">segundos</span>
+        </div>
+        <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
+          <button class="secondary" type="button" onclick="setIntervalo(10)" style="padding:6px 14px; font-size:0.85rem;">10s — rápido</button>
+          <button class="secondary" type="button" onclick="setIntervalo(15)" style="padding:6px 14px; font-size:0.85rem;">15s — padrão</button>
+          <button class="secondary" type="button" onclick="setIntervalo(30)" style="padding:6px 14px; font-size:0.85rem;">30s — pausado</button>
+          <button class="secondary" type="button" onclick="setIntervalo(60)" style="padding:6px 14px; font-size:0.85rem;">60s — longo</button>
+        </div>
+      </div>
+      <button onclick="salvarIntervalo()" style="margin-top:10px;">Salvar tempo</button>
+      <p style="color:var(--text-dim); font-size:0.8rem; margin-top:12px;">
+        💡 A mudança é aplicada automaticamente no dashboard na próxima atualização (até 60s).
+      </p>
+    </div>
+
+    <!-- Vendedoras -->
+    <div class="config-section">
+      <h2>👥 Vendedoras</h2>
+      <p style="color:var(--text-dim); margin-bottom:20px;">
+        O nome deve bater <strong>exatamente</strong> com o nome do usuário no Pipedrive.
+      </p>
+      <div id="vendedores-list"></div>
+      <button class="add-btn" onclick="addVendedor()">+ Adicionar vendedor(a)</button>
+      <div class="actions">
+        <button onclick="salvarVendedores()">Salvar lista</button>
+        <button class="secondary" onclick="carregar()">Cancelar / Recarregar</button>
+      </div>
+    </div>
+
+    <!-- Teste -->
+    <div class="config-section">
+      <h2>🧪 Testes</h2>
+      <p style="color:var(--text-dim); margin-bottom:16px;">
+        Use esses botões para verificar se tudo está funcionando.
+      </p>
+      <div class="actions">
+        <button class="secondary" onclick="testarConexao()">Testar conexão com Apps Script</button>
+        <button class="secondary" onclick="testarCelebrar()">Disparar celebração de teste</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script>
+    const API = window.PQRS_CONFIG.APPS_SCRIPT_URL;
+    let vendedores = [];
+
+    function showMsg(text, type = 'ok') {
+      const area = document.getElementById('msg-area');
+      area.innerHTML = `<div class="msg ${type}">${text}</div>`;
+      setTimeout(() => area.innerHTML = '', 4000);
+    }
+
+    async function fetchJSON(action, params = {}) {
+      const url = new URL(API);
+      url.searchParams.set('action', action);
+      Object.keys(params).forEach(k => url.searchParams.set(k, params[k]));
+      const r = await fetch(url.toString());
+      return r.json();
+    }
+
+    async function postJSON(action, body) {
+      const url = new URL(API);
+      url.searchParams.set('action', action);
+      const r = await fetch(url.toString(), {
+        method: 'POST',
+        body: JSON.stringify(body),
+        // Sem Content-Type para evitar CORS preflight
+      });
+      return r.json();
+    }
+
+    async function carregar() {
+      if (!API || API.includes('COLE_AQUI')) {
+        showMsg('⚠ URL do Apps Script não configurada. Edite o arquivo config.js e cole a URL do Apps Script publicado.', 'err');
+        return;
+      }
+      try {
+        const cfg = await fetchJSON('config');
+        // Compatibilidade: se só existir metaMensal antiga, usa como Trabalhista
+        document.getElementById('meta-trab-input').value = cfg.metaTrabalhista || cfg.metaMensal || 40;
+        document.getElementById('meta-serv-input').value = cfg.metaServidor || 20;
+        document.getElementById('intervalo-input').value = cfg.intervaloSlide || 15;
+
+        const vs = await fetchJSON('vendedores');
+        vendedores = Array.isArray(vs) ? vs : [];
+        renderVendedores();
+      } catch (e) {
+        showMsg('Erro ao carregar: ' + e.message, 'err');
+      }
+    }
+
+    function renderVendedores() {
+      const container = document.getElementById('vendedores-list');
+      container.innerHTML = '';
+      vendedores.forEach((v, i) => {
+        const div = document.createElement('div');
+        div.className = 'vendedor-card';
+        div.innerHTML = `
+          <img src="${v.foto || ''}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 60 60%22%3E%3Crect fill=%22%231c2138%22 width=%2260%22 height=%2260%22/%3E%3Ctext x=%2230%22 y=%2238%22 font-size=%2222%22 text-anchor=%22middle%22 fill=%22%239ba3b8%22%3E?%3C/text%3E%3C/svg%3E'">
+          <input type="text" value="${v.nome}" placeholder="Nome" oninput="vendedores[${i}].nome=this.value">
+          <input type="text" value="${v.foto || ''}" placeholder="URL da foto" oninput="vendedores[${i}].foto=this.value">
+          <select onchange="vendedores[${i}].area=this.value">
+            <option value="Trabalhista" ${v.area==='Trabalhista'?'selected':''}>Trabalhista</option>
+            <option value="Servidor Público" ${v.area==='Servidor Público'?'selected':''}>Servidor Público</option>
+          </select>
+          <input type="number" value="${v.meta_dia || 2}" min="0" placeholder="Meta/dia" oninput="vendedores[${i}].meta_dia=Number(this.value)">
+          <button class="danger" onclick="removerVendedor(${i})">×</button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function addVendedor() {
+      vendedores.push({ nome: '', foto: '', area: 'Trabalhista', meta_dia: 2, ativo: true });
+      renderVendedores();
+    }
+
+    function removerVendedor(i) {
+      if (!confirm('Remover ' + (vendedores[i].nome || 'vendedora') + '?')) return;
+      vendedores.splice(i, 1);
+      renderVendedores();
+    }
+
+    function setIntervalo(val) {
+      document.getElementById('intervalo-input').value = val;
+    }
+
+    async function salvarIntervalo() {
+      const seg = Number(document.getElementById('intervalo-input').value);
+      if (!seg || seg < 3 || seg > 120) return showMsg('Tempo inválido (3 a 120 segundos)', 'err');
+      try {
+        const r = await postJSON('saveConfig', { intervaloSlide: seg });
+        if (r.success) showMsg(`Tempo salvo: ${seg} segundos por slide`);
+        else showMsg('Erro: ' + (r.error || 'desconhecido'), 'err');
+      } catch (e) { showMsg('Erro: ' + e.message, 'err'); }
+    }
+
+    async function salvarMetas() {
+      const metaTrab = Number(document.getElementById('meta-trab-input').value);
+      const metaServ = Number(document.getElementById('meta-serv-input').value);
+      if (!metaTrab || metaTrab < 1) return showMsg('Meta Trabalhista inválida', 'err');
+      if (!metaServ || metaServ < 1) return showMsg('Meta Servidor inválida', 'err');
+      try {
+        const r = await postJSON('saveConfig', {
+          metaTrabalhista: metaTrab,
+          metaServidor: metaServ,
+        });
+        if (r.success) showMsg(`Metas salvas: Trabalhista ${metaTrab} · Servidor ${metaServ}`);
+        else showMsg('Erro: ' + (r.error || 'desconhecido'), 'err');
+      } catch (e) { showMsg('Erro: ' + e.message, 'err'); }
+    }
+
+    async function salvarVendedores() {
+      // Validar
+      for (const v of vendedores) {
+        if (!v.nome || !v.nome.trim()) return showMsg('Há vendedor sem nome', 'err');
+      }
+      try {
+        const r = await postJSON('saveVendedores', vendedores);
+        if (r.success) showMsg('Vendedores salvos: ' + r.total);
+        else showMsg('Erro: ' + (r.error || 'desconhecido'), 'err');
+      } catch (e) { showMsg('Erro: ' + e.message, 'err'); }
+    }
+
+    async function testarConexao() {
+      try {
+        const r = await fetchJSON('ping');
+        if (r.ok) showMsg('Conexão OK! Servidor respondendo. Hora: ' + r.time);
+        else showMsg('Resposta inesperada', 'err');
+      } catch (e) { showMsg('Falha: ' + e.message, 'err'); }
+    }
+
+    function testarCelebrar() {
+      window.open('index.html#test', '_blank');
+      setTimeout(() => {
+        showMsg('Aperte "T" na janela do dashboard para disparar a celebração de teste');
+      }, 500);
+    }
+
+    carregar();
+  </script>
+</body>
+</html>

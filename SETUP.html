@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>PQRS Dashboard — Guia de Instalação</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #0a0e1a;
+    color: #e0e6f0;
+    line-height: 1.7;
+    padding: 40px 20px;
+  }
+  .container { max-width: 860px; margin: 0 auto; }
+  h1 { font-size: 2.2rem; background: linear-gradient(90deg, #00d9ff, #7c4dff);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+    background-clip:text; margin-bottom: 10px; }
+  h2 { font-size: 1.4rem; color: #00d9ff; margin: 40px 0 14px;
+    border-left: 4px solid #00d9ff; padding-left: 12px; }
+  h3 { font-size: 1.1rem; color: #ffd700; margin: 24px 0 10px; }
+  p { color: #b0bcd4; margin-bottom: 14px; }
+  ol, ul { padding-left: 24px; margin-bottom: 14px; color: #b0bcd4; }
+  li { margin-bottom: 8px; }
+  code {
+    background: #1c2138; border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 5px; padding: 2px 8px; font-size: 0.9rem; color: #00d9ff;
+    font-family: 'Consolas', monospace;
+  }
+  pre {
+    background: #131829; border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px; padding: 20px; margin: 14px 0;
+    overflow-x: auto; font-family: 'Consolas', monospace;
+    font-size: 0.9rem; color: #a0e0b0; white-space: pre;
+  }
+  .step {
+    background: linear-gradient(135deg, #131829, #1c2138);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px; padding: 28px; margin: 16px 0;
+  }
+  .step-num {
+    display: inline-block; background: linear-gradient(135deg, #00d9ff, #7c4dff);
+    color: #000; font-weight: 900; border-radius: 50%;
+    width: 36px; height: 36px; text-align: center; line-height: 36px;
+    font-size: 1.1rem; margin-right: 10px; flex-shrink: 0;
+  }
+  .step-title { display: flex; align-items: center; margin-bottom: 16px; }
+  .step-title h2 { margin: 0; border: none; padding: 0; font-size: 1.3rem; }
+  .warn {
+    background: rgba(255,179,0,0.1); border: 1px solid #ffb300;
+    border-radius: 8px; padding: 14px 18px; margin: 14px 0; color: #ffb300;
+  }
+  .ok {
+    background: rgba(0,230,118,0.08); border: 1px solid #00e676;
+    border-radius: 8px; padding: 14px 18px; margin: 14px 0; color: #00e676;
+  }
+  .order-box {
+    background: #131829; border: 2px solid #7c4dff;
+    border-radius: 12px; padding: 24px; margin: 20px 0;
+    font-family: 'Consolas', monospace; font-size: 0.95rem; color: #d0d8f0;
+    line-height: 2;
+  }
+  a { color: #00d9ff; }
+  strong { color: #fff; }
+  .badge {
+    display: inline-block; background: #7c4dff; color: #fff;
+    border-radius: 4px; padding: 2px 8px; font-size: 0.8rem; font-weight: 700;
+    margin-left: 6px; vertical-align: middle;
+  }
+  .badge.green { background: #00c853; }
+  .badge.red { background: #ff5252; }
+  hr { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 30px 0; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>PQRS Dashboard</h1>
+<p style="color:#7c4dff; font-weight:700; font-size:1.1rem;">Guia de Instalação — versão com API do Pipedrive (zero delay)</p>
+
+<div class="warn">
+  ⚠ <strong>Não abra os arquivos HTML do dashboard antes de terminar todos os passos abaixo.</strong> Você verá erros. É normal — o sistema precisa do backend configurado primeiro.
+</div>
+
+<h2>Ordem de instalação</h2>
+<div class="order-box">
+[1] Pegar o TOKEN da API no Pipedrive<br>
+    ↓<br>
+[2] Descobrir os IDs dos funis no Apps Script<br>
+    ↓<br>
+[3] Editar o Code.gs com token + IDs<br>
+    ↓<br>
+[4] Publicar o Apps Script como Web App<br>
+    ↓<br>
+[5] Configurar webhook no Pipedrive<br>
+    ↓<br>
+[6] Hospedar dashboard no Vercel (internet) <span class="badge green">recomendado</span><br>
+    ↓<br>
+[7] Cadastrar vendedoras no painel<br>
+    ↓<br>
+[8] Abrir na TV em modo kiosk
+</div>
+
+<hr>
+
+<!-- PASSO 1 -->
+<div class="step">
+  <div class="step-title"><span class="step-num">1</span><h2>Token da API do Pipedrive</h2></div>
+  <ol>
+    <li>No Pipedrive, clique no seu <strong>nome</strong> (canto superior direito) → <strong>Configurações</strong></li>
+    <li><strong>Preferências pessoais</strong> → aba <strong>API</strong></li>
+    <li>Copie o <strong>Token pessoal da API</strong></li>
+  </ol>
+  <div class="warn">⚠ Esse token dá acesso total à sua conta. Não compartilhe. Vai ficar dentro do Apps Script (privado).</div>
+</div>
+
+<!-- PASSO 2 -->
+<div class="step">
+  <div class="step-title"><span class="step-num">2</span><h2>Colar o Code.gs na planilha</h2></div>
+  <ol>
+    <li>Abra sua planilha do Google</li>
+    <li>Menu: <strong>Extensões → Apps Script</strong></li>
+    <li>Apague qualquer código existente</li>
+    <li>Abra o arquivo <code>apps-script/Code.gs</code> (está na pasta <code>pqrs-dashboard</code>) com o Bloco de Notas</li>
+    <li>Copie tudo e cole no editor do Apps Script</li>
+    <li>Encontre a linha abaixo e substitua pelo seu token:</li>
+  </ol>
+  <pre>const PIPEDRIVE_TOKEN = 'COLE_AQUI_SEU_TOKEN_DO_PIPEDRIVE';</pre>
+  <p>Confirme também que o domínio está correto (parte antes de .pipedrive.com da URL):</p>
+  <pre>const PIPEDRIVE_DOMAIN = 'patezqueirozronconiestrauch';</pre>
+  <p>Salve com <strong>Ctrl+S</strong>.</p>
+</div>
+
+<!-- PASSO 3 -->
+<div class="step">
+  <div class="step-title"><span class="step-num">3</span><h2>Descobrir IDs dos Funis</h2></div>
+  <ol>
+    <li>No editor do Apps Script, no menu suspenso de funções, selecione <strong><code>descobrirFunis</code></strong></li>
+    <li>Clique em <strong>Executar</strong></li>
+    <li>Na primeira vez vai pedir autorização — clique em <strong>Autorizar acesso</strong> e aceite</li>
+    <li>Abra os logs: menu <strong>Visualizar → Registros</strong> (ou Ctrl+Enter)</li>
+    <li>Você vai ver algo como:
+      <pre>1: 1. Trabalhista
+2: 2. Servidor Público</pre>
+    </li>
+    <li>Anote os números (IDs) de "1. Trabalhista" e "2. Servidor Público"</li>
+    <li>Volte no código e edite:
+      <pre>const PIPELINE_TRABALHISTA_ID = 1;  // ← coloque o número real
+const PIPELINE_SERVIDOR_ID = 2;     // ← coloque o número real</pre>
+    </li>
+  </ol>
+  <h3>Descobrir nomes exatos das vendedoras</h3>
+  <ol>
+    <li>Execute a função <strong><code>descobrirUsuarios</code></strong></li>
+    <li>Veja nos logs os nomes das usuárias do Pipedrive</li>
+    <li>Esses nomes devem bater <strong>exatamente</strong> com os da aba "Vendedores" da planilha</li>
+  </ol>
+  <h3>Testar tudo</h3>
+  <ol>
+    <li>Execute <strong><code>testarDashboard</code></strong></li>
+    <li>Deve aparecer nos logs:
+      <pre>Total deals analisados: 614
+Contratos mês: 20
+Leads mês: 614
+Conversão: 3.26%</pre>
+    </li>
+  </ol>
+  <div class="ok">✅ Se aparecer números, a integração com o Pipedrive está funcionando!</div>
+</div>
+
+<!-- PASSO 4 -->
+<div class="step">
+  <div class="step-title"><span class="step-num">4</span><h2>Publicar como Web App</h2></div>
+  <ol>
+    <li>No editor do Apps Script: <strong>Implantar → Nova implantação</strong></li>
+    <li>Clique no ícone de engrenagem ⚙ ao lado de "Selecione tipo" → escolha <strong>App da Web</strong></li>
+    <li>Configure:
+      <ul>
+        <li><strong>Descrição:</strong> PQRS Dashboard v2</li>
+        <li><strong>Executar como:</strong> Eu mesmo</li>
+        <li><strong>Quem pode acessar:</strong> Qualquer pessoa ← <span class="badge red">obrigatório</span></li>
+      </ul>
+    </li>
+    <li>Clique em <strong>Implantar</strong></li>
+    <li><strong>Copie a URL gerada</strong> (formato: <code>https://script.google.com/macros/s/AKfycby.../exec</code>)</li>
+  </ol>
+  <h3>Testar a URL</h3>
+  <p>Abra no navegador: <code>[SUA URL]/exec?action=ping</code></p>
+  <p>Deve aparecer: <code>{"ok":true,"time":"...","domain":"patezqueirozronconiestrauch"}</code></p>
+  <div class="warn">⚠ Toda vez que alterar o código do Apps Script, vá em "Gerenciar implantações" → Editar → "Nova versão" → Implantar. Senão a URL continua com a versão antiga.</div>
+</div>
+
+<!-- PASSO 5 -->
+<div class="step">
+  <div class="step-title"><span class="step-num">5</span><h2>Colar a URL no dashboard</h2></div>
+  <p>Abra o arquivo <code>config.js</code> com o <strong>Bloco de Notas</strong> e substitua a linha:</p>
+  <pre>APPS_SCRIPT_URL: 'COLE_AQUI_A_URL_DO_SEU_APPS_SCRIPT',</pre>
+  <p>pela URL copiada no passo anterior:</p>
+  <pre>APPS_SCRIPT_URL: 'https://script.google.com/macros/s/SEU_ID/exec',</pre>
+  <p>Salve o arquivo.</p>
+</div>
+
+<!-- PASSO 6 -->
+<div class="step">
+  <div class="step-title"><span class="step-num">6</span><h2>Configurar Webhook no Pipedrive</h2></div>
+  <ol>
+    <li>No Pipedrive: <strong>Configurações → Ferramentas e aplicativos → Webhooks</strong></li>
+    <li>Clique em <strong>+ Webhook</strong></li>
+    <li>Configure:
+      <ul>
+        <li><strong>URL do endpoint:</strong> cole a URL do Apps Script (mesma do passo 4)</li>
+        <li><strong>Versão HTTP:</strong> v2</li>
+        <li><strong>Tipo de evento:</strong> change.deal</li>
+        <li><strong>Autenticação:</strong> nenhuma</li>
+      </ul>
+    </li>
+    <li>Salve</li>
+  </ol>
+  <h3>Testar o webhook</h3>
+  <ol>
+    <li>Pegue um negócio do funil "1. Trabalhista" em aberto</li>
+    <li>Marque como <strong>Ganho</strong></li>
+    <li>Em ~5 segundos, deve aparecer uma linha nova na aba <strong>Eventos</strong> da planilha</li>
+  </ol>
+  <div class="ok">✅ Se a linha apareceu, o webhook está funcionando!</div>
+</div>
+
+<!-- PASSO 7 -->
+<div class="step">
+  <div class="step-title"><span class="step-num">7</span><h2>Hospedar no Vercel (internet) <span class="badge green">Recomendado</span></h2></div>
+  <p>O Vercel é gratuito e deixa o dashboard acessível de qualquer lugar (celular, TV, qualquer PC).</p>
+  <ol>
+    <li>Crie conta em <a href="https://vercel.com" target="_blank">vercel.com</a> com sua conta Google</li>
+    <li>Clique em <strong>Add New → Project</strong></li>
+    <li>Escolha <strong>"Browse All Templates" → Import From Folder</strong></li>
+    <li>Arraste a pasta <code>pqrs-dashboard</code> (sem a subpasta <code>apps-script</code>)</li>
+    <li>Clique em <strong>Deploy</strong></li>
+    <li>Em ~30 segundos você recebe uma URL como <code>pqrs-dashboard.vercel.app</code></li>
+  </ol>
+  <div class="ok">✅ Agora o dashboard é acessível de qualquer lugar!</div>
+  <h3>Testar antes de subir (opcional)</h3>
+  <p>Com a URL do Apps Script já no <code>config.js</code>, abra o <code>index.html</code> diretamente no navegador. Se os dados aparecerem, está ok para subir no Vercel.</p>
+</div>
+
+<!-- PASSO 8 -->
+<div class="step">
+  <div class="step-title"><span class="step-num">8</span><h2>Cadastrar Vendedoras</h2></div>
+  <p>Acesse <code>https://sua-url.vercel.app/config.html</code> e configure:</p>
+  <ul>
+    <li><strong>Meta do mês</strong> (ex: 90)</li>
+    <li>Para cada vendedora:
+      <ul>
+        <li><strong>Nome:</strong> deve bater EXATAMENTE com o nome no Pipedrive</li>
+        <li><strong>Foto:</strong> URL pública da imagem (Google Drive compartilhado, Imgur, etc.)</li>
+        <li><strong>Área:</strong> Trabalhista ou Servidor Público</li>
+        <li><strong>Meta/dia:</strong> contratos esperados por dia</li>
+      </ul>
+    </li>
+  </ul>
+  <h3>URL de foto via Google Drive</h3>
+  <ol>
+    <li>No Google Drive, clique direito na foto → <strong>Compartilhar → Qualquer pessoa com o link</strong></li>
+    <li>Copie o link. Ele vai ser tipo: <code>https://drive.google.com/file/d/FILE_ID/view</code></li>
+    <li>Transforme para URL direta: <code>https://drive.google.com/uc?id=FILE_ID</code></li>
+    <li>Cole no campo Foto</li>
+  </ol>
+</div>
+
+<!-- PASSO 9 -->
+<div class="step">
+  <div class="step-title"><span class="step-num">9</span><h2>Exibir na TV</h2></div>
+  <h3>Modo kiosk (recomendado)</h3>
+  <p>Execute no PowerShell ou Executar (Win+R):</p>
+  <pre>chrome.exe --kiosk https://sua-url.vercel.app</pre>
+  <p>Para sair do modo kiosk: <strong>Alt+F4</strong></p>
+  <h3>Modo simples</h3>
+  <ol>
+    <li>Abra o Chrome e acesse a URL do dashboard</li>
+    <li>Pressione <strong>F11</strong> para tela cheia</li>
+  </ol>
+</div>
+
+<hr>
+<h2>Atalhos do dashboard</h2>
+<ul>
+  <li><strong>T</strong> — disparar celebração de teste</li>
+  <li><strong>N</strong> — pular para próximo slide</li>
+  <li><strong>F11</strong> — tela cheia</li>
+  <li><strong>F5</strong> — recarregar</li>
+</ul>
+
+<hr>
+<h2>Solução de Problemas</h2>
+<div class="step">
+  <h3>Dashboard mostra "URL do Apps Script não configurada"</h3>
+  <p>Edite o arquivo <code>config.js</code> com o Bloco de Notas e cole a URL do Apps Script.</p>
+
+  <h3>Dashboard carrega mas mostra tudo zerado</h3>
+  <ul>
+    <li>Execute <code>descobrirUsuarios</code> no Apps Script e confira se os nomes batem com a aba Vendedores</li>
+    <li>Confira se os IDs dos funis estão corretos</li>
+  </ul>
+
+  <h3>Webhook não dispara celebração</h3>
+  <ul>
+    <li>Veja na aba <strong>Eventos</strong> da planilha se apareceu linha nova</li>
+    <li>Se não: Pipedrive → Webhooks → Histórico → veja o erro</li>
+  </ul>
+
+  <h3>Som de sino não toca</h3>
+  <p>Clique uma vez na janela do dashboard. Browsers bloqueiam áudio sem interação do usuário. Depois do primeiro clique funciona normalmente.</p>
+
+  <h3>Como abrir o Code.gs com Bloco de Notas</h3>
+  <ol>
+    <li>Abra o Explorador de Arquivos</li>
+    <li>Navegue até <code>C:\Users\Advogada\pqrs-dashboard\apps-script\</code></li>
+    <li>Clique com o botão direito em <code>Code.gs</code></li>
+    <li>Abrir com → Bloco de Notas</li>
+  </ol>
+</div>
+
+</div>
+</body>
+</html>

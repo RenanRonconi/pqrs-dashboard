@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Comercial PQRS</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Estado de carregamento -->
+  <div id="loading" class="overlay">
+    <div class="loader"></div>
+    <p>Carregando dados do Pipedrive...</p>
+  </div>
+
+  <!-- Container dos slides -->
+  <div id="slides-container">
+
+    <!-- ========== SLIDE 1: VISÃO GERAL ========== -->
+    <section class="slide" id="slide-geral">
+      <header class="slide-header">
+        <h1>DASHBOARD COMERCIAL PQRS</h1>
+        <div class="brand">PQRS</div>
+      </header>
+
+      <!-- KPIs totais do time (linha compacta) -->
+      <div class="kpi-row-compact">
+        <div class="kpi-mini-card">
+          <span class="kmc-label">HOJE</span>
+          <span class="kmc-val" id="kpi-dia">0</span>
+          <span class="kmc-sub">contratos</span>
+        </div>
+        <div class="kpi-mini-card">
+          <span class="kmc-label">SEMANA</span>
+          <span class="kmc-val" id="kpi-semana">0</span>
+          <span class="kmc-sub">contratos</span>
+        </div>
+        <div class="kpi-mini-card">
+          <span class="kmc-label">MÊS TOTAL</span>
+          <span class="kmc-val" id="kpi-mes">0</span>
+          <span class="kmc-sub">contratos</span>
+        </div>
+        <div class="kpi-mini-card">
+          <span class="kmc-label">CONVERSÃO MÊS</span>
+          <span class="kmc-val kmc-val-sm" id="conv-mes">0%</span>
+          <span class="kmc-sub">de <strong id="leads-mes">0</strong> leads</span>
+        </div>
+        <div class="kpi-mini-card">
+          <span class="kmc-label">DIAS ÚTEIS REST.</span>
+          <span class="kmc-val" id="meta-dias">0</span>
+          <span class="kmc-sub">dias úteis</span>
+        </div>
+      </div>
+
+      <!-- Duas áreas com metas próprias -->
+      <div class="areas-meta">
+
+        <!-- TRABALHISTA -->
+        <div class="area-meta-card area-trabalhista">
+          <div class="area-meta-header">
+            <div class="area-meta-title">
+              <span class="area-meta-icon">⚖️</span>
+              <span class="area-meta-name">TRABALHISTA</span>
+            </div>
+            <div class="area-meta-goal">META: <span id="meta-trab-val">—</span> contratos</div>
+          </div>
+
+          <div class="area-meta-body">
+            <div class="area-meta-big">
+              <div class="area-meta-bignum" id="trab-mes">0</div>
+              <div class="area-meta-biglbl">no mês</div>
+              <div class="area-meta-sidebyside">
+                <div class="area-meta-sitem">
+                  <span class="area-meta-snum" id="trab-semana">0</span>
+                  <span class="area-meta-slbl">semana</span>
+                </div>
+                <div class="area-meta-sitem">
+                  <span class="area-meta-snum" id="trab-dia">0</span>
+                  <span class="area-meta-slbl">hoje</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="area-mini-rank" id="trab-mini-rank">
+              <div class="ami-title">🏆 TOP VENDEDORAS DA ÁREA</div>
+              <div class="ami-list" id="trab-mini-rank-list"></div>
+            </div>
+          </div>
+
+          <div class="area-meta-stats">
+            <div class="ams-item">
+              <span class="ams-lbl">LEADS DO MÊS</span>
+              <span class="ams-val" id="trab-leads">0</span>
+            </div>
+            <div class="ams-item">
+              <span class="ams-lbl">CONVERSÃO</span>
+              <span class="ams-val" id="trab-conv">0%</span>
+            </div>
+            <div class="ams-item">
+              <span class="ams-lbl">RITMO NECESSÁRIO</span>
+              <span class="ams-val"><span id="trab-ritmo">0</span><small>/dia</small></span>
+            </div>
+          </div>
+
+          <div class="area-meta-progress">
+            <div class="amp-header">
+              <span>PROGRESSO DA META</span>
+              <span class="amp-pct" id="trab-pct">0%</span>
+            </div>
+            <div class="amp-bar">
+              <div class="amp-fill trab-amp-fill" id="trab-fill"></div>
+            </div>
+            <div class="amp-footer">
+              <span>Faltam <strong id="trab-faltam">—</strong> contratos</span>
+              <span>Fechados: <strong id="trab-fechados">0</strong>/<span id="trab-meta-total">—</span></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- SERVIDOR PÚBLICO -->
+        <div class="area-meta-card area-servidor">
+          <div class="area-meta-header">
+            <div class="area-meta-title">
+              <span class="area-meta-icon">🏛️</span>
+              <span class="area-meta-name">SERVIDOR PÚBLICO</span>
+            </div>
+            <div class="area-meta-goal">META: <span id="meta-serv-val">—</span> contratos</div>
+          </div>
+
+          <div class="area-meta-body">
+            <div class="area-meta-big">
+              <div class="area-meta-bignum" id="serv-mes">0</div>
+              <div class="area-meta-biglbl">no mês</div>
+              <div class="area-meta-sidebyside">
+                <div class="area-meta-sitem">
+                  <span class="area-meta-snum" id="serv-semana">0</span>
+                  <span class="area-meta-slbl">semana</span>
+                </div>
+                <div class="area-meta-sitem">
+                  <span class="area-meta-snum" id="serv-dia">0</span>
+                  <span class="area-meta-slbl">hoje</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="area-mini-rank" id="serv-mini-rank">
+              <div class="ami-title">🏆 TOP VENDEDORAS DA ÁREA</div>
+              <div class="ami-list" id="serv-mini-rank-list"></div>
+            </div>
+          </div>
+
+          <div class="area-meta-stats">
+            <div class="ams-item">
+              <span class="ams-lbl">LEADS DO MÊS</span>
+              <span class="ams-val" id="serv-leads">0</span>
+            </div>
+            <div class="ams-item">
+              <span class="ams-lbl">CONVERSÃO</span>
+              <span class="ams-val" id="serv-conv">0%</span>
+            </div>
+            <div class="ams-item">
+              <span class="ams-lbl">RITMO NECESSÁRIO</span>
+              <span class="ams-val"><span id="serv-ritmo">0</span><small>/dia</small></span>
+            </div>
+          </div>
+
+          <div class="area-meta-progress">
+            <div class="amp-header">
+              <span>PROGRESSO DA META</span>
+              <span class="amp-pct" id="serv-pct">0%</span>
+            </div>
+            <div class="amp-bar">
+              <div class="amp-fill serv-amp-fill" id="serv-fill"></div>
+            </div>
+            <div class="amp-footer">
+              <span>Faltam <strong id="serv-faltam">—</strong> contratos</span>
+              <span>Fechados: <strong id="serv-fechados">0</strong>/<span id="serv-meta-total">—</span></span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ========== SLIDE 2: RANKING ========== -->
+    <section class="slide" id="slide-ranking">
+      <header class="slide-header">
+        <h1>🏆 RANKING DO TIME</h1>
+        <div class="brand">PQRS</div>
+      </header>
+      <div id="ranking-list" class="ranking-list"></div>
+    </section>
+
+  </div>
+
+  <!-- ========== SLIDE DE CELEBRAÇÃO ========== -->
+  <div id="celebracao" class="celebracao hidden">
+    <canvas id="confetti-canvas"></canvas>
+    <div class="celebracao-content">
+      <div class="celebracao-emoji">🎉</div>
+      <h2>CONTRATO FECHADO!</h2>
+      <img id="cel-foto" class="cel-foto" src="" alt="">
+      <div class="cel-nome" id="cel-nome">—</div>
+      <div class="cel-info">
+        <span id="cel-negocio">—</span>
+        <span class="cel-funil" id="cel-funil">—</span>
+      </div>
+      <div class="cel-stats">
+        <span>+1 contrato</span>
+        <span id="cel-total">— no mês</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controles -->
+  <div class="controls">
+    <button class="ctrl-btn" id="pin-btn" title="Fixar slide atual (parar rotação)">
+      <span class="pin-icon">📌</span>
+      <span class="pin-text">Fixar</span>
+    </button>
+    <button class="ctrl-btn" id="prev-btn" title="Slide anterior">◀</button>
+    <button class="ctrl-btn" id="next-btn" title="Próximo slide">▶</button>
+    <a href="config.html" class="ctrl-btn config-btn" title="Configurações">⚙</a>
+  </div>
+
+  <!-- Indicador de slides -->
+  <div class="slide-indicator" id="slide-indicator"></div>
+
+  <!-- Última atualização -->
+  <div class="last-update" id="last-update">—</div>
+
+  <script src="config.js"></script>
+  <script src="dashboard.js"></script>
+</body>
+</html>
