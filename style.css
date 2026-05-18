@@ -667,32 +667,113 @@ h1, h2, h3 { font-weight: 800; letter-spacing: 0.02em; }
 }
 .ranking-item {
   display: grid;
-  grid-template-columns: 70px 80px 1fr auto;
+  grid-template-columns: 76px 88px 1fr auto;
   gap: 22px;
   align-items: center;
-  background: linear-gradient(135deg, var(--bg-2), var(--bg-3));
-  border: 1px solid var(--border);
+  flex: 1;
+  min-height: 0;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 50%),
+    linear-gradient(135deg, #1a1f33 0%, #131829 60%, #0e1322 100%);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-top-color: rgba(255,255,255,0.18);
+  border-bottom-color: rgba(0,0,0,0.55);
   border-radius: 14px;
-  padding: 16px 26px;
+  padding: 18px 26px;
   position: relative;
   overflow: hidden;
   animation: slideIn 0.5s ease forwards;
   opacity: 0;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.10),
+    inset 0 -2px 0 rgba(0,0,0,0.35),
+    0 3px 0 rgba(0,0,0,0.35),
+    0 12px 28px rgba(0,0,0,0.5);
+}
+.ranking-item::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 50%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.05), transparent);
+  pointer-events: none;
+  border-radius: 14px 14px 0 0;
 }
 .ranking-item::before {
   content: '';
   position: absolute; left: 0; top: 0; bottom: 0;
   width: 5px;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.5);
+  z-index: 2;
 }
-.ranking-item.area-trab::before { background: var(--trabalhista); }
-.ranking-item.area-serv::before { background: var(--servidor); }
+.ranking-item.area-trab::before {
+  background: linear-gradient(180deg, var(--trabalhista), var(--trabalhista-2));
+  box-shadow: 0 0 12px var(--trabalhista-glow), 2px 0 8px rgba(0,0,0,0.5);
+}
+.ranking-item.area-serv::before {
+  background: linear-gradient(180deg, var(--servidor), var(--servidor-2));
+  box-shadow: 0 0 12px var(--servidor-glow), 2px 0 8px rgba(0,0,0,0.5);
+}
+.ranking-item > * { position: relative; z-index: 1; }
+
+.ranking-item.area-trab {
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.10),
+    inset 0 -2px 0 rgba(0,0,0,0.35),
+    0 3px 0 rgba(0,0,0,0.35),
+    0 12px 28px rgba(0,0,0,0.5),
+    0 0 28px rgba(0,217,255,0.12);
+}
+.ranking-item.area-serv {
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.10),
+    inset 0 -2px 0 rgba(0,0,0,0.35),
+    0 3px 0 rgba(0,0,0,0.35),
+    0 12px 28px rgba(0,0,0,0.5),
+    0 0 28px rgba(255,107,53,0.12);
+}
 
 .ranking-item.rank-1 {
-  border-color: var(--gold);
-  box-shadow: 0 0 40px rgba(255, 215, 0, 0.2);
+  background:
+    linear-gradient(180deg, rgba(255,215,0,0.10) 0%, transparent 50%),
+    linear-gradient(135deg, #2a2316 0%, #1d1810 60%, #14110a 100%);
+  border: 2px solid var(--gold);
+  border-top-color: #ffe45c;
+  border-bottom-color: rgba(120,80,0,0.6);
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255,215,0,0.35),
+    inset 0 -2px 0 rgba(80,55,0,0.6),
+    inset 0 0 30px rgba(255,215,0,0.08),
+    0 5px 0 rgba(60,40,0,0.55),
+    0 16px 36px rgba(0,0,0,0.6),
+    0 0 40px rgba(255,215,0,0.40);
+  animation: slideIn 0.5s ease forwards, championPulseH 2.4s ease-in-out infinite 0.5s;
 }
-.ranking-item.rank-2 { border-color: #c0c0c0; }
-.ranking-item.rank-3 { border-color: #cd7f32; }
+@keyframes championPulseH {
+  0%,100% { box-shadow:
+    inset 0 1px 0 rgba(255,215,0,0.35),
+    inset 0 -2px 0 rgba(80,55,0,0.6),
+    inset 0 0 30px rgba(255,215,0,0.08),
+    0 5px 0 rgba(60,40,0,0.55),
+    0 16px 36px rgba(0,0,0,0.6),
+    0 0 40px rgba(255,215,0,0.40);
+  }
+  50%     { box-shadow:
+    inset 0 1px 0 rgba(255,215,0,0.5),
+    inset 0 -2px 0 rgba(80,55,0,0.6),
+    inset 0 0 38px rgba(255,215,0,0.18),
+    0 5px 0 rgba(60,40,0,0.55),
+    0 18px 40px rgba(0,0,0,0.65),
+    0 0 70px rgba(255,215,0,0.7);
+  }
+}
+.ranking-item.rank-1::before {
+  background: linear-gradient(180deg, #ffe45c, var(--gold), #ff9800) !important;
+  width: 6px;
+  box-shadow: 0 0 16px var(--gold), 2px 0 10px rgba(0,0,0,0.5) !important;
+}
+.ranking-item.rank-2 { border-color: rgba(192,192,192,0.5); }
+.ranking-item.rank-3 { border-color: rgba(205,127,50,0.5); }
 
 @keyframes slideIn {
   from { opacity: 0; transform: translateX(-30px); }
@@ -715,17 +796,42 @@ h1, h2, h3 { font-weight: 800; letter-spacing: 0.02em; }
 }
 
 .rank-foto {
-  width: 72px; height: 72px;
+  width: 80px; height: 80px;
   border-radius: 50%;
   object-fit: cover;
   border: 3px solid var(--border);
   background: var(--bg-3);
+  box-shadow:
+    inset 0 0 0 2px rgba(255,255,255,0.12),
+    0 0 0 2px rgba(0,0,0,0.4),
+    0 6px 14px rgba(0,0,0,0.55);
 }
-.ranking-item.rank-1 .rank-foto { border-color: var(--gold); }
-.ranking-item.area-trab .rank-foto:not(.rank-1 .rank-foto) { border-color: var(--trabalhista); }
-.ranking-item.area-serv .rank-foto { border-color: var(--servidor); }
+.ranking-item.rank-1 .rank-foto {
+  border-color: var(--gold);
+  box-shadow:
+    inset 0 0 0 2px rgba(255,235,150,0.4),
+    0 0 0 2px rgba(80,50,0,0.5),
+    0 8px 18px rgba(0,0,0,0.6),
+    0 0 28px rgba(255,215,0,0.65);
+}
+.ranking-item.area-trab .rank-foto:not(.rank-1 .rank-foto) {
+  border-color: var(--trabalhista);
+  box-shadow:
+    inset 0 0 0 2px rgba(255,255,255,0.12),
+    0 0 0 2px rgba(0,0,0,0.4),
+    0 6px 14px rgba(0,0,0,0.55),
+    0 0 22px var(--trabalhista-glow);
+}
+.ranking-item.area-serv .rank-foto {
+  border-color: var(--servidor);
+  box-shadow:
+    inset 0 0 0 2px rgba(255,255,255,0.12),
+    0 0 0 2px rgba(0,0,0,0.4),
+    0 6px 14px rgba(0,0,0,0.55),
+    0 0 22px var(--servidor-glow);
+}
 
-.rank-info { display: flex; flex-direction: column; gap: 6px; }
+.rank-info { display: flex; flex-direction: column; gap: 8px; justify-content: center; }
 .rank-nome {
   font-size: 1.5rem; font-weight: 700;
   display: flex; align-items: center; gap: 10px;
@@ -752,11 +858,14 @@ h1, h2, h3 { font-weight: 800; letter-spacing: 0.02em; }
   display: flex; gap: 22px;
   color: var(--text-dim); font-size: 0.9rem;
   flex-wrap: wrap;
+  align-items: center;
 }
 .rank-stats strong { color: var(--text); font-size: 1.05rem; }
 .rank-stats strong.rank-stat-mes {
   font-size: 1.25rem;
   font-weight: 900;
+  line-height: 1;
+  vertical-align: middle;
 }
 .ranking-item.area-trab .rank-stat-mes { color: var(--trabalhista); }
 .ranking-item.area-serv .rank-stat-mes { color: var(--servidor); }
@@ -785,10 +894,11 @@ h1, h2, h3 { font-weight: 800; letter-spacing: 0.02em; }
 
 .rank-numbers {
   display: flex; flex-direction: column; align-items: flex-end;
+  justify-content: center;
   gap: 4px;
 }
 .rank-big {
-  font-size: 2.8rem; font-weight: 900; line-height: 1;
+  font-size: 3.2rem; font-weight: 900; line-height: 1;
 }
 .ranking-item.area-trab .rank-big { color: var(--trabalhista); }
 .ranking-item.area-serv .rank-big { color: var(--servidor); }
@@ -1021,4 +1131,581 @@ h1, h2, h3 { font-weight: 800; letter-spacing: 0.02em; }
   color: var(--text-dim);
   opacity: 0.4;
   z-index: 100;
+}
+
+/* ============================================================
+   RANKING EM CARDS (slide 2 — layout novo, estilo "carta")
+   ============================================================ */
+.ranking-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+  padding: 8px;
+  width: 100%;
+  align-content: start;
+}
+
+.vcard {
+  background:
+    /* Brilho diagonal sutil (efeito vidro) */
+    linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 35%, transparent 100%),
+    /* Highlight superior (luz vinda de cima) */
+    linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 40%),
+    /* Base com profundidade */
+    linear-gradient(160deg, #1a1f33 0%, #131829 60%, #0e1322 100%);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-top-color: rgba(255,255,255,0.18);
+  border-bottom-color: rgba(0,0,0,0.55);
+  border-radius: 22px;
+  padding: 22px 18px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  animation: vcardIn 0.6s ease-out both;
+  box-shadow:
+    /* Reflexo interno superior */
+    inset 0 1px 0 rgba(255,255,255,0.12),
+    /* Sombra interna inferior (profundidade) */
+    inset 0 -3px 0 rgba(0,0,0,0.35),
+    /* "Base" do card — dá sensação de empilhado */
+    0 4px 0 rgba(0,0,0,0.4),
+    /* Sombra solta no fundo */
+    0 18px 38px rgba(0,0,0,0.55),
+    0 6px 14px rgba(0,0,0,0.4);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.vcard::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 55%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), transparent);
+  pointer-events: none;
+  border-radius: 22px 22px 0 0;
+  z-index: 0;
+}
+.vcard > * { position: relative; z-index: 1; }
+
+@keyframes vcardIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Borda colorida por área (com glow externo + neon) */
+.vcard.area-trab {
+  border-color: rgba(0,217,255,0.45);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.12),
+    inset 0 -3px 0 rgba(0,0,0,0.35),
+    inset 0 0 22px rgba(0,217,255,0.08),
+    0 4px 0 rgba(0,0,0,0.4),
+    0 18px 38px rgba(0,0,0,0.55),
+    0 0 28px rgba(0,217,255,0.20);
+}
+.vcard.area-serv {
+  border-color: rgba(255,107,53,0.45);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.12),
+    inset 0 -3px 0 rgba(0,0,0,0.35),
+    inset 0 0 22px rgba(255,107,53,0.08),
+    0 4px 0 rgba(0,0,0,0.4),
+    0 18px 38px rgba(0,0,0,0.55),
+    0 0 28px rgba(255,107,53,0.20);
+}
+
+/* ════════════════════════════════════════════════════
+   #1 — CAMPEÃ — destaque máximo (pedestal dourado)
+   ════════════════════════════════════════════════════ */
+.vcard.rank-1 {
+  padding-top: 36px;  /* abre espaço para a faixa LÍDER */
+  background:
+    /* Brilho diagonal animado */
+    linear-gradient(135deg, rgba(255,255,255,0.10) 0%, transparent 30%, transparent 70%, rgba(255,215,0,0.10) 100%),
+    /* Highlight dourado superior */
+    linear-gradient(180deg, rgba(255,215,0,0.14) 0%, transparent 45%),
+    /* Base levemente quente */
+    linear-gradient(160deg, #2a2316 0%, #1d1810 60%, #14110a 100%);
+  border: 2px solid var(--gold);
+  border-top-color: #ffe45c;
+  border-bottom-color: rgba(120,80,0,0.6);
+  transform: translateY(-4px);
+  box-shadow:
+    inset 0 1px 0 rgba(255,215,0,0.35),
+    inset 0 -3px 0 rgba(80,55,0,0.6),
+    inset 0 0 30px rgba(255,215,0,0.10),
+    0 6px 0 rgba(60,40,0,0.55),
+    0 22px 48px rgba(0,0,0,0.6),
+    0 0 50px rgba(255,215,0,0.45);
+  animation: vcardIn 0.6s ease-out both, championPulse 2.4s ease-in-out infinite;
+}
+@keyframes championPulse {
+  0%,100% { box-shadow:
+    inset 0 1px 0 rgba(255,215,0,0.35),
+    inset 0 -3px 0 rgba(80,55,0,0.6),
+    inset 0 0 30px rgba(255,215,0,0.10),
+    0 6px 0 rgba(60,40,0,0.55),
+    0 22px 48px rgba(0,0,0,0.6),
+    0 0 50px rgba(255,215,0,0.45);
+  }
+  50%     { box-shadow:
+    inset 0 1px 0 rgba(255,215,0,0.5),
+    inset 0 -3px 0 rgba(80,55,0,0.6),
+    inset 0 0 36px rgba(255,215,0,0.20),
+    0 6px 0 rgba(60,40,0,0.55),
+    0 22px 56px rgba(0,0,0,0.65),
+    0 0 80px rgba(255,215,0,0.75);
+  }
+}
+
+/* Faixa "LÍDER" no topo do card */
+.vcard.rank-1::after {
+  content: '🏆 LÍDER';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, #ffeb3b 0%, #ffd700 50%, #ff9800 100%);
+  color: #2a1a00;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  padding: 5px 22px;
+  border-radius: 0 0 12px 12px;
+  border: 1px solid rgba(255,255,255,0.4);
+  border-top: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.6),
+    inset 0 -2px 0 rgba(150,90,0,0.5),
+    0 3px 0 rgba(80,50,0,0.4),
+    0 6px 16px rgba(255,215,0,0.5);
+  z-index: 3;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.4);
+}
+
+/* Header: posição + seta + pace */
+.vcard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 12px;
+  gap: 6px;
+}
+.vcard-pos {
+  font-size: 1.9rem;
+  font-weight: 900;
+  background: linear-gradient(180deg, #fff, #6b7280);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1;
+}
+.vcard.rank-1 .vcard-pos {
+  background: linear-gradient(180deg, var(--gold), #ff9800);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.vcard-arrow {
+  font-size: 0.85rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 100px;
+}
+.vcard-arrow.arr-up   { background: rgba(0,230,118,0.15); color: var(--green); }
+.vcard-arrow.arr-down { background: rgba(255,82,82,0.15); color: var(--red); }
+.vcard-arrow.arr-same { background: rgba(155,163,184,0.15); color: var(--text-dim); }
+.vcard-arrow.arr-new  { background: rgba(255,215,0,0.15); color: var(--gold); border: 1px solid var(--gold); font-size: 0.7rem; }
+.vcard-pace {
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 100px;
+  letter-spacing: 0.03em;
+  border: 1px solid;
+}
+.vcard-pace.pace-green  { color: var(--green);  background: rgba(0,230,118,0.12); border-color: var(--green); }
+.vcard-pace.pace-yellow { color: var(--yellow); background: rgba(255,179,0,0.12); border-color: var(--yellow); }
+.vcard-pace.pace-red    { color: var(--red);    background: rgba(255,82,82,0.12); border-color: var(--red); animation: redBlink 1.4s infinite; }
+.vcard-pace.pace-neutral{ color: var(--text-dim); border-color: var(--text-dim); }
+
+/* Foto + streak */
+.vcard-photo-wrap {
+  position: relative;
+  margin-bottom: 10px;
+}
+.vcard-photo-wrap::before {
+  content: '';
+  position: absolute;
+  top: -4px; left: -4px; right: -4px; bottom: -4px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0%, rgba(255,255,255,0.15) 25%, transparent 50%);
+  z-index: -1;
+  animation: photoRing 6s linear infinite;
+}
+@keyframes photoRing {
+  to { transform: rotate(360deg); }
+}
+.vcard-photo {
+  width: 110px; height: 110px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid var(--bg-3);
+  box-shadow:
+    inset 0 0 0 2px rgba(255,255,255,0.15),
+    0 0 0 2px rgba(0,0,0,0.4),
+    0 8px 20px rgba(0,0,0,0.55),
+    0 0 22px rgba(255,255,255,0.05);
+}
+.vcard.area-trab .vcard-photo {
+  border-color: var(--trabalhista);
+  box-shadow:
+    inset 0 0 0 2px rgba(255,255,255,0.15),
+    0 0 0 2px rgba(0,0,0,0.4),
+    0 8px 20px rgba(0,0,0,0.55),
+    0 0 28px var(--trabalhista-glow);
+}
+.vcard.area-serv .vcard-photo {
+  border-color: var(--servidor);
+  box-shadow:
+    inset 0 0 0 2px rgba(255,255,255,0.15),
+    0 0 0 2px rgba(0,0,0,0.4),
+    0 8px 20px rgba(0,0,0,0.55),
+    0 0 28px var(--servidor-glow);
+}
+.vcard.rank-1 .vcard-photo {
+  border-color: var(--gold);
+  box-shadow:
+    inset 0 0 0 2px rgba(255,235,150,0.4),
+    0 0 0 3px rgba(80,50,0,0.5),
+    0 10px 24px rgba(0,0,0,0.65),
+    0 0 36px rgba(255,215,0,0.7);
+}
+.vcard-streak {
+  position: absolute;
+  bottom: -4px; right: -6px;
+  background: linear-gradient(135deg, #ff5722, #ffb300);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 900;
+  padding: 4px 11px;
+  border-radius: 100px;
+  border: 3px solid var(--bg-2);
+  box-shadow: 0 0 16px rgba(255,87,34,0.65);
+  animation: streakGlow 1.2s infinite;
+}
+
+/* Nome + área */
+.vcard-name {
+  font-size: 1.35rem;
+  font-weight: 900;
+  text-align: center;
+  letter-spacing: 0.02em;
+  margin-bottom: 4px;
+  line-height: 1.1;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+}
+.vcard.rank-1 .vcard-name {
+  font-size: 1.5rem;
+  background: linear-gradient(180deg, #fff8d6 0%, var(--gold) 60%, #ff9800 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)) drop-shadow(0 0 10px rgba(255,215,0,0.4));
+  text-shadow: none;
+}
+.vcard-area { margin-bottom: 10px; }
+.vcard-area .rank-badge { font-size: 0.65rem; }
+
+/* Badges (linha de conquistas) */
+.vcard-badges {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+}
+.vcard-badges-spacer { min-height: 28px; margin-bottom: 12px; }
+.vcard-badge-ico {
+  font-size: 1.3rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 8px rgba(255,215,0,0.6));
+  animation: badgePop 0.4s ease-out;
+}
+
+/* Stats: 3 colunas (Mês/Semana/Hoje) */
+.vcard-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 6px;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.25) 100%);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.05),
+    inset 0 -1px 0 rgba(255,255,255,0.03),
+    inset 0 2px 8px rgba(0,0,0,0.5);
+  border: 1px solid rgba(0,0,0,0.4);
+}
+.vcard-stat {
+  text-align: center;
+  position: relative;
+}
+.vcard-stat:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: 0; top: 18%; bottom: 18%;
+  width: 1px;
+  background: rgba(255,255,255,0.08);
+}
+.vcard-stat-val {
+  font-size: 1.8rem;
+  font-weight: 900;
+  line-height: 1;
+}
+.vcard.area-trab .vcard-stat-val { color: var(--trabalhista); }
+.vcard.area-serv .vcard-stat-val { color: var(--servidor); }
+.vcard.rank-1    .vcard-stat-val { color: var(--gold); }
+.vcard-stat-meta {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+.vcard-stat-lbl {
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+
+/* Progress bar */
+.vcard-progress { width: 100%; margin-bottom: 10px; }
+.vcard-progress-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  margin-bottom: 5px;
+}
+.vcard-progress-info strong { color: var(--text); }
+.vcard-pct strong { font-size: 1rem; }
+.vcard.area-trab .vcard-pct strong { color: var(--trabalhista); }
+.vcard.area-serv .vcard-pct strong { color: var(--servidor); }
+.vcard.rank-1    .vcard-pct strong { color: var(--gold); }
+.vcard-progress-bar {
+  height: 9px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 100px;
+  overflow: hidden;
+}
+.vcard-progress-fill {
+  height: 100%;
+  border-radius: 100px;
+  transition: width 1s ease;
+}
+.vcard.area-trab .vcard-progress-fill {
+  background: linear-gradient(90deg, var(--trabalhista), var(--trabalhista-2));
+  box-shadow: 0 0 10px var(--trabalhista-glow);
+}
+.vcard.area-serv .vcard-progress-fill {
+  background: linear-gradient(90deg, var(--servidor), var(--servidor-2));
+  box-shadow: 0 0 10px var(--servidor-glow);
+}
+.vcard.rank-1 .vcard-progress-fill {
+  background: linear-gradient(90deg, var(--gold), #ff9800);
+  box-shadow: 0 0 14px rgba(255,215,0,0.6);
+}
+
+/* Footer: conversão + chase */
+.vcard-footer {
+  width: 100%;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+.vcard-conv { margin-bottom: 4px; }
+.vcard-conv strong { color: var(--text); font-size: 0.92rem; }
+.vcard-chase {
+  font-style: italic;
+  font-size: 0.78rem;
+  line-height: 1.3;
+}
+.vcard-chase strong {
+  color: var(--text);
+  font-style: normal;
+  font-weight: 700;
+}
+.vcard.rank-1 .vcard-chase strong { color: var(--gold); }
+
+/* Layout para grid de cards */
+#slide-ranking #ranking-list.ranking-cards-grid {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+/* Layout horizontal: cards preenchem toda a altura disponível sem scroll */
+#slide-ranking #ranking-list.ranking-list {
+  overflow: hidden;
+}
+
+/* Streak no mini-rank */
+.ami-streak {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 0.75rem;
+  font-weight: 900;
+  padding: 1px 6px;
+  border-radius: 100px;
+  background: linear-gradient(135deg, #ff5722, #ffb300);
+  color: #fff;
+}
+
+/* ============================================================
+   GAMIFICAÇÃO — Ranking
+   ============================================================ */
+
+/* Linha do nome (substitui .rank-nome simples) */
+.rank-nome-line {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.rank-nome-line .rank-nome {
+  font-size: 1.5rem; font-weight: 700;
+  display: inline;
+}
+
+/* Seta de posição (subiu/desceu/igual) */
+.rank-position { position: relative; }
+.rank-arrow {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 800;
+  margin-top: 2px;
+  letter-spacing: 0.05em;
+  -webkit-text-fill-color: initial;
+  background: none;
+}
+.arr-up    { color: var(--green); }
+.arr-down  { color: var(--red); }
+.arr-same  { color: var(--text-dim); }
+.arr-new   {
+  color: var(--gold);
+  font-size: 0.65rem;
+  padding: 1px 6px;
+  border: 1px solid var(--gold);
+  border-radius: 100px;
+  display: inline-block;
+}
+
+/* Streak 🔥 */
+.rank-streak {
+  font-size: 0.95rem;
+  font-weight: 900;
+  padding: 2px 9px;
+  border-radius: 100px;
+  background: linear-gradient(135deg, #ff5722, #ffb300);
+  color: #fff;
+  box-shadow: 0 0 10px rgba(255,87,34,0.55);
+  animation: streakGlow 1.2s infinite;
+}
+@keyframes streakGlow {
+  0%,100% { box-shadow: 0 0 10px rgba(255,87,34,0.55); }
+  50%     { box-shadow: 0 0 18px rgba(255,179,0,0.85); }
+}
+
+/* Badges de conquista (👑 ⚡ 🎯 🏆) */
+.rank-badge-ico {
+  font-size: 1.15rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 6px rgba(255,215,0,0.55));
+  animation: badgePop 0.4s ease-out;
+}
+@keyframes badgePop {
+  from { transform: scale(0.5); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+/* Chase indicator */
+.rank-chase {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  font-style: italic;
+  margin-top: -2px;
+}
+.rank-chase strong {
+  color: var(--text);
+  font-style: normal;
+  font-weight: 700;
+}
+.ranking-item.rank-1 .rank-chase strong { color: var(--gold); }
+
+/* Pace semáforo */
+.rank-pace {
+  font-size: 0.82rem;
+  font-weight: 800;
+  padding: 3px 11px;
+  border-radius: 100px;
+  letter-spacing: 0.04em;
+  margin-left: auto;
+}
+.pace-green  { color: var(--green);  background: rgba(0,230,118,0.12); border: 1px solid var(--green); }
+.pace-yellow { color: var(--yellow); background: rgba(255,179,0,0.12); border: 1px solid var(--yellow); }
+.pace-red    {
+  color: var(--red); background: rgba(255,82,82,0.12); border: 1px solid var(--red);
+  animation: redBlink 1.4s infinite;
+}
+.pace-neutral{ color: var(--text-dim); border: 1px solid var(--text-dim); }
+@keyframes redBlink {
+  0%,100% { background: rgba(255,82,82,0.12); }
+  50%     { background: rgba(255,82,82,0.30); }
+}
+
+/* ============================================================
+   CELEBRAÇÃO ESCALONADA (níveis 1, 2, 3)
+   ============================================================ */
+.celebracao.cel-lvl-2 .celebracao-content {
+  transform: scale(1.08);
+  box-shadow: 0 0 80px rgba(255,179,0,0.6);
+}
+.celebracao.cel-lvl-2 h2 {
+  background: linear-gradient(90deg, #ffb300, #ff6b35);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.celebracao.cel-lvl-3 .celebracao-content {
+  transform: scale(1.18);
+  box-shadow: 0 0 120px rgba(255,215,0,0.9), 0 0 60px rgba(255,107,53,0.6);
+  animation: hatTrickShake 0.6s ease-in-out;
+}
+.celebracao.cel-lvl-3 h2 {
+  background: linear-gradient(90deg, var(--gold), #ff6b35, var(--gold));
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: hatTrickShine 1.5s linear infinite;
+  font-size: 4.5rem;
+}
+.celebracao.cel-lvl-3 .celebracao-emoji {
+  animation: hatTrickRotate 1s ease-in-out infinite alternate;
+}
+@keyframes hatTrickShake {
+  0%,100% { transform: scale(1.18) translateX(0); }
+  20%     { transform: scale(1.18) translateX(-8px); }
+  40%     { transform: scale(1.18) translateX(8px); }
+  60%     { transform: scale(1.18) translateX(-5px); }
+  80%     { transform: scale(1.18) translateX(5px); }
+}
+@keyframes hatTrickShine {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+@keyframes hatTrickRotate {
+  from { transform: rotate(-12deg) scale(1); }
+  to   { transform: rotate(12deg) scale(1.2); }
 }
