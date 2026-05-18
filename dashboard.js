@@ -15,6 +15,14 @@ let isCelebrating = false;
 let lastData = null;
 let isPinned = false;
 
+// Pré-carrega o MP3 de celebração para evitar delay na hora do evento
+let _celebracaoAudio = null;
+function _preloadCelebracao() {
+  _celebracaoAudio = new Audio('celebracao.mp3');
+  _celebracaoAudio.load();
+}
+window.addEventListener('load', _preloadCelebracao);
+
 // ============ UTILS ============
 
 /** Converte URL do Google Drive para formato que carrega em <img> */
@@ -185,8 +193,17 @@ function renderDashboard(data) {
   renderMiniRank('trab-mini-rank-list', data.ranking, 'trab');
   renderMiniRank('serv-mini-rank-list', data.ranking, 'serv');
 
-  // Ranking (Slide 2)
-  renderRanking(data.ranking);
+  // Ranking (Slide 2) — alterna entre cards e horizontal
+  // Prioridade: backend config (rankingLayout) > CFG local > 'cards'
+  const layoutEscolhido = (data.config && data.config.rankingLayout)
+                       || CFG.RANKING_LAYOUT
+                       || 'cards';
+  if (layoutEscolhido === 'horizontal') {
+    document.getElementById('ranking-list').className = 'ranking-list';
+    renderRanking(data.ranking);
+  } else {
+    renderRankingCards(data.ranking);
+  }
 }
 
 function renderMiniRank(containerId, ranking, areaKey) {
@@ -208,13 +225,15 @@ function renderMiniRank(containerId, ranking, areaKey) {
   filtrado.forEach((v, i) => {
     const fotoUrl = fixDriveUrl(v.foto);
     const fb = fotoSVG(v.nome[0], cor);
+    const streakHtml = (v.streak || 0) > 0
+      ? `<span class="ami-streak">🔥${v.streak}</span>` : '';
     const row = document.createElement('div');
     row.className = 'ami-row';
     row.innerHTML = `
       <div class="ami-medal">${medals[i] || ''}</div>
       <img class="ami-foto" src="${fotoUrl}" data-fallback="${fb}" alt="${v.nome}">
       <div class="ami-nomewrap">
-        <div class="ami-nome">${v.nome}</div>
+        <div class="ami-nome">${v.nome} ${streakHtml}</div>
         <div class="ami-conv">Conversão: <strong>${v.conversao.toFixed(1)}%</strong></div>
       </div>
       <div class="ami-num">${v.contratos.mes}</div>
@@ -226,36 +245,104 @@ function renderMiniRank(containerId, ranking, areaKey) {
   });
 }
 
+// ─── Helpers de gamificação ───
+function paceStatus(contratosMes, metaMes, diasDecorridos, diasTotal) {
+  if (!metaMes || !diasTotal) return { tag: '—', cls: 'pace-neutral', label: '—' };
+  const esperado = (metaMes / diasTotal) * Math.max(1, diasDecorridos);
+  const ratio = contratosMes / Math.max(0.0001, esperado);
+  if (ratio >= 1.00) return { tag: '🟢', cls: 'pace-green',  label: 'No ritmo' };
+  if (ratio >= 0.80) return { tag: '🟡', cls: 'pace-yellow', label: 'Atenção'  };
+  return                    { tag: '🔴', cls: 'pace-red',    label: 'Perigo'   };
+}
+
+function badgesVendedora(v, pos) {
+  const out = [];
+  // (a coroa do #1 fica como faixa "LÍDER" no card; aqui só conquistas comuns)
+  if (v.contratos.dia >= 3)                        out.push({ ico: '⚡', tip: 'Relâmpago — 3+ hoje' });
+  if (v.contratos.dia >= (v.meta_dia || 2))        out.push({ ico: '🎯', tip: 'Meta do dia batida' });
+  if (v.meta_mes > 0 && v.contratos.mes >= v.meta_mes) out.push({ ico: '🏆', tip: 'Meta do mês batida' });
+  if ((v.streak || 0) >= 5)                        out.push({ ico: '🔥', tip: 'Em chamas — ' + v.streak + ' dias' });
+  return out;
+}
+
+function setaPosicao(posAtual, posAnterior) {
+  if (posAnterior == null) return { txt: 'NEW', cls: 'arr-new' };
+  const delta = posAnterior - posAtual; // positivo = subiu
+  if (delta > 0)  return { txt: '↑' + delta, cls: 'arr-up'   };
+  if (delta < 0)  return { txt: '↓' + (-delta), cls: 'arr-down' };
+  return            { txt: '→',  cls: 'arr-same' };
+}
+
 function renderRanking(ranking) {
   const container = document.getElementById('ranking-list');
   container.innerHTML = '';
 
+  // Dias úteis para cálculo de pace (vêm do backend, fallback p/ heurística local)
+  const meta = (lastData && lastData.meta) || {};
+  const diasTotal     = meta.diasUteisTotal     || 22;
+  const diasDecorrido = meta.diasUteisDecorridos || Math.max(1, diasTotal - (meta.diasUteisRestantes || 0));
+
   ranking.forEach((v, i) => {
     const pos = i + 1;
-    // Barra de progresso baseada na meta_dia × dias úteis do mês (≈ 22)
-    const metaMes = (v.meta_dia || 2) * 22;
+    const metaMes = v.meta_mes || ((v.meta_dia || 2) * 22);
     const pct = Math.min(100, (v.contratos.mes / Math.max(1, metaMes)) * 100);
     const cls = areaClass(v.area);
     const cor = cls === 'area-serv' ? '#ff6b35' : '#00d9ff';
     const fotoUrl = fixDriveUrl(v.foto);
     const fotoFallback = fotoSVG(v.nome[0], cor);
 
+    const pace  = paceStatus(v.contratos.mes, metaMes, diasDecorrido, diasTotal);
+    const badges = badgesVendedora(v, pos);
+    const arrow = setaPosicao(pos, v.posicao_anterior);
+
+    // Chase indicator (a quantos contratos está de ultrapassar quem está acima)
+    let chase = '';
+    if (pos > 1) {
+      const acima = ranking[i - 1];
+      const diff = acima.contratos.mes - v.contratos.mes;
+      if (diff === 0)      chase = `Empatada com <strong>${acima.nome}</strong> — próximo contrato assume o ${pos - 1}º`;
+      else                 chase = `A <strong>${diff}</strong> de ultrapassar <strong>${acima.nome}</strong>`;
+    } else {
+      const abaixo = ranking[i + 1];
+      if (abaixo) {
+        const gap = v.contratos.mes - abaixo.contratos.mes;
+        chase = gap > 0
+          ? `<strong>${gap}</strong> à frente de <strong>${abaixo.nome}</strong>`
+          : `<strong>${abaixo.nome}</strong> empatada — defenda o topo!`;
+      }
+    }
+
+    const streakHtml = (v.streak || 0) > 0
+      ? `<span class="rank-streak" title="${v.streak} dia(s) seguido(s) fechando">🔥${v.streak}</span>`
+      : '';
+
+    const badgesHtml = badges.map(b =>
+      `<span class="rank-badge-ico" title="${b.tip}">${b.ico}</span>`
+    ).join('');
+
     const item = document.createElement('div');
     item.className = 'ranking-item rank-' + pos + ' ' + cls;
     item.style.animationDelay = (i * 0.1) + 's';
     item.innerHTML = `
-      <div class="rank-position">${pos}°</div>
+      <div class="rank-position">
+        ${pos}°
+        <span class="rank-arrow ${arrow.cls}">${arrow.txt}</span>
+      </div>
       <img class="rank-foto" src="${fotoUrl}" data-fallback="${fotoFallback}" alt="${v.nome}">
       <div class="rank-info">
-        <div class="rank-nome">
-          ${v.nome} ${pos === 1 ? '👑' : ''}
+        <div class="rank-nome-line">
+          <span class="rank-nome">${v.nome}</span>
+          ${streakHtml}
+          ${badgesHtml}
           ${areaBadge(v.area)}
         </div>
+        <div class="rank-chase">${chase}</div>
         <div class="rank-stats">
-          <span>Hoje: <strong>${v.contratos.dia}</strong></span>
+          <span>Hoje: <strong>${v.contratos.dia}</strong>/${v.meta_dia || 2}</span>
           <span>Semana: <strong>${v.contratos.semana}</strong></span>
-          <span>Mês: <strong class="rank-stat-mes">${v.contratos.mes}</strong></span>
+          <span>Mês: <strong class="rank-stat-mes">${v.contratos.mes}</strong>/${metaMes}</span>
           <span>Conversão: <strong>${v.conversao.toFixed(1)}%</strong></span>
+          <span class="rank-pace ${pace.cls}" title="${pace.label}">${pace.tag} ${pace.label}</span>
         </div>
         <div class="rank-bar"><div class="rank-bar-fill" style="width:${pct}%"></div></div>
       </div>
@@ -267,7 +354,110 @@ function renderRanking(ranking) {
     container.appendChild(item);
   });
 
-  // Configurar fallback de imagem
+  container.querySelectorAll('img').forEach(img => {
+    img.onerror = () => { img.src = img.dataset.fallback; img.onerror = null; };
+  });
+}
+
+// ============ RANKING EM CARDS (layout estilo cartas) ============
+function renderRankingCards(ranking) {
+  const container = document.getElementById('ranking-list');
+  container.innerHTML = '';
+  container.className = 'ranking-cards-grid';
+
+  const meta = (lastData && lastData.meta) || {};
+  const diasTotal     = meta.diasUteisTotal     || 22;
+  const diasDecorrido = meta.diasUteisDecorridos || Math.max(1, diasTotal - (meta.diasUteisRestantes || 0));
+
+  ranking.forEach((v, i) => {
+    const pos = i + 1;
+    const metaMes = v.meta_mes || ((v.meta_dia || 2) * 22);
+    const pct = Math.min(100, (v.contratos.mes / Math.max(1, metaMes)) * 100);
+    const cls = areaClass(v.area);
+    const cor = cls === 'area-serv' ? '#ff6b35' : '#00d9ff';
+    const fotoUrl = fixDriveUrl(v.foto);
+    const fotoFallback = fotoSVG(v.nome[0], cor);
+
+    const pace = paceStatus(v.contratos.mes, metaMes, diasDecorrido, diasTotal);
+    const badges = badgesVendedora(v, pos);
+    const arrow = setaPosicao(pos, v.posicao_anterior);
+
+    let chase = '';
+    if (pos > 1) {
+      const acima = ranking[i - 1];
+      const diff = acima.contratos.mes - v.contratos.mes;
+      if (diff === 0) chase = `Empatada com <strong>${acima.nome}</strong>`;
+      else            chase = `A <strong>${diff}</strong> de ultrapassar <strong>${acima.nome.split(' ')[0]}</strong>`;
+    } else {
+      const abaixo = ranking[i + 1];
+      if (abaixo) {
+        const gap = v.contratos.mes - abaixo.contratos.mes;
+        chase = gap > 0
+          ? `<strong>${gap}</strong> à frente de <strong>${abaixo.nome.split(' ')[0]}</strong>`
+          : `<strong>${abaixo.nome.split(' ')[0]}</strong> empatada — defenda!`;
+      }
+    }
+
+    const streakHtml = (v.streak || 0) > 0
+      ? `<div class="vcard-streak">🔥 ${v.streak}</div>` : '';
+
+    const badgesHtml = badges.map(b =>
+      `<span class="vcard-badge-ico" title="${b.tip}">${b.ico}</span>`
+    ).join('');
+
+    const card = document.createElement('div');
+    card.className = 'vcard rank-' + pos + ' ' + cls;
+    card.style.animationDelay = (i * 0.08) + 's';
+    card.innerHTML = `
+      <div class="vcard-header">
+        <div class="vcard-pos">${pos}°</div>
+        <div class="vcard-arrow ${arrow.cls}">${arrow.txt}</div>
+        <div class="vcard-pace ${pace.cls}">${pace.tag} ${pace.label}</div>
+      </div>
+
+      <div class="vcard-photo-wrap">
+        <img class="vcard-photo" src="${fotoUrl}" data-fallback="${fotoFallback}" alt="${v.nome}">
+        ${streakHtml}
+      </div>
+
+      <div class="vcard-name">${v.nome}</div>
+      <div class="vcard-area">${areaBadge(v.area)}</div>
+
+      ${badgesHtml ? `<div class="vcard-badges">${badgesHtml}</div>` : '<div class="vcard-badges-spacer"></div>'}
+
+      <div class="vcard-stats">
+        <div class="vcard-stat">
+          <div class="vcard-stat-val">${v.contratos.mes}</div>
+          <div class="vcard-stat-lbl">MÊS</div>
+        </div>
+        <div class="vcard-stat">
+          <div class="vcard-stat-val">${v.contratos.semana}</div>
+          <div class="vcard-stat-lbl">SEMANA</div>
+        </div>
+        <div class="vcard-stat">
+          <div class="vcard-stat-val">${v.contratos.dia}<span class="vcard-stat-meta">/${v.meta_dia || 2}</span></div>
+          <div class="vcard-stat-lbl">HOJE</div>
+        </div>
+      </div>
+
+      <div class="vcard-progress">
+        <div class="vcard-progress-info">
+          <span>Meta: <strong>${v.contratos.mes}/${metaMes}</strong></span>
+          <span class="vcard-pct"><strong>${pct.toFixed(0)}%</strong></span>
+        </div>
+        <div class="vcard-progress-bar">
+          <div class="vcard-progress-fill" style="width:${pct}%"></div>
+        </div>
+      </div>
+
+      <div class="vcard-footer">
+        <div class="vcard-conv">Conversão: <strong>${v.conversao.toFixed(1)}%</strong></div>
+        <div class="vcard-chase">${chase}</div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+
   container.querySelectorAll('img').forEach(img => {
     img.onerror = () => { img.src = img.dataset.fallback; img.onerror = null; };
   });
@@ -406,248 +596,140 @@ async function celebrate(ev) {
   stopSlideRotation();
 
   const cel = document.getElementById('celebracao');
+
+  // ─── Calcular intensidade baseada em contratos do dia ───
+  let contratosHojeAposEste = 1;
+  let metaDia = 2;
+  let totalMes = '— no mês';
+  let fotoUrl = '';
+  const fotoFallback = fotoSVG((ev.vendedor || '?')[0], '#ffd700');
+
+  if (lastData) {
+    const v = lastData.ranking.find(x => x.nome === ev.vendedor);
+    if (v) {
+      contratosHojeAposEste = (v.contratos.dia || 0) + 1;
+      metaDia = v.meta_dia || 2;
+      totalMes = (v.contratos.mes + 1) + ' no mês';
+      fotoUrl = fixDriveUrl(v.foto);
+    }
+  }
+
+  // Permite override via evento (ex: teste com T)
+  if (ev.intensity) {
+    contratosHojeAposEste = ev.intensity === 3 ? 3 : (ev.intensity === 2 ? metaDia : 1);
+  }
+
+  let intensity = 1;
+  let titulo = 'CONTRATO FECHADO!';
+  let emoji = '🎉';
+  if (contratosHojeAposEste >= 3) {
+    intensity = 3;
+    titulo = 'HAT TRICK! 🎩';
+    emoji = '🚀';
+  } else if (contratosHojeAposEste >= metaDia) {
+    intensity = 2;
+    titulo = 'META DO DIA BATIDA!';
+    emoji = '🎯';
+  }
+
+  // Aplicar classe de intensidade no container (CSS escalona o visual)
+  cel.classList.remove('cel-lvl-1', 'cel-lvl-2', 'cel-lvl-3');
+  cel.classList.add('cel-lvl-' + intensity);
+
+  // Atualizar textos
+  const tituloEl = cel.querySelector('h2');
+  if (tituloEl) tituloEl.textContent = titulo;
+  const emojiEl = cel.querySelector('.celebracao-emoji');
+  if (emojiEl) emojiEl.textContent = emoji;
+
   setText('cel-nome', ev.vendedor || 'Vendedor');
   setText('cel-negocio', ev.negocio || '');
   setText('cel-funil', ev.funil || '');
-
-  // Total no mês
-  let totalMes = '— no mês';
-  if (lastData) {
-    const v = lastData.ranking.find(x => x.nome === ev.vendedor);
-    if (v) totalMes = (v.contratos.mes + 1) + ' no mês';
-  }
   setText('cel-total', totalMes);
 
-  // Foto
   const foto = document.getElementById('cel-foto');
-  let fotoUrl = '';
-  let fotoFallback = fotoSVG(ev.vendedor[0], '#ffd700');
-  if (lastData) {
-    const v = lastData.ranking.find(x => x.nome === ev.vendedor);
-    if (v) fotoUrl = fixDriveUrl(v.foto);
-  }
   foto.src = fotoUrl || fotoFallback;
   foto.onerror = () => { foto.src = fotoFallback; foto.onerror = null; };
 
   cel.classList.remove('hidden');
 
-  // Tocar fanfarra + confete contínuo
-  playFanfare();
-  startConfetti();
+  // Som + confete proporcionais à intensidade
+  playFanfare(intensity);
+  startConfetti(intensity);
 
-  await new Promise(r => setTimeout(r, CFG.CELEBRATION_DURATION_SECONDS * 1000));
+  const dur = (CFG.CELEBRATION_DURATION_SECONDS + (intensity - 1) * 1.5) * 1000;
+  await new Promise(r => setTimeout(r, dur));
 
   stopConfetti();
   cel.classList.add('hidden');
   if (!isPinned) startSlideRotation();
 }
 
-// ============ FANFARRA COMEMORATIVA (Web Audio API, versão orquestrada) ============
-function playFanfare() {
+// ============ CELEBRAÇÃO — MP3 + multidão sintetizada ============
+function playFanfare(intensity) {
+  const lvl = Math.max(1, Math.min(3, intensity || 1));
+
+  // ── 1. Toca o MP3 de celebração ──
+  try {
+    const audio = _celebracaoAudio || new Audio('celebracao.mp3');
+    audio.currentTime = 0;
+    // Volume escala com o nível: 1→75% · 2→88% · 3→100%
+    audio.volume = lvl === 3 ? 1.0 : (lvl === 2 ? 0.88 : 0.75);
+    audio.play().catch(e => console.warn('Celebração MP3:', e));
+    // Prepara nova instância para próxima celebração
+    _celebracaoAudio = null;
+    setTimeout(_preloadCelebracao, 800);
+  } catch (e) {
+    console.error('Erro ao tocar MP3:', e);
+  }
+
+  // ── 2. Camada de multidão sintetizada (cresce com o nível) ──
+  if (lvl < 1) return;
   try {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     const ctx = new AudioCtx();
-    const now = ctx.currentTime;
-
-    // ====== MASTER CHAIN: Compressor → Destino ======
-    const master = ctx.createDynamicsCompressor();
-    master.threshold.value = -12;
-    master.knee.value = 8;
-    master.ratio.value = 6;
-    master.attack.value = 0.003;
-    master.release.value = 0.25;
-    master.connect(ctx.destination);
-
-    // ====== REVERB (impulse synthetic — sala orquestral) ======
-    const reverb = ctx.createConvolver();
     const rate = ctx.sampleRate;
-    const len = rate * 2.2;
-    const rbuf = ctx.createBuffer(2, len, rate);
-    for (let ch = 0; ch < 2; ch++) {
-      const data = rbuf.getChannelData(ch);
-      for (let i = 0; i < len; i++) {
-        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.5);
-      }
-    }
-    reverb.buffer = rbuf;
+    const now  = ctx.currentTime;
 
-    const dry = ctx.createGain(); dry.gain.value = 0.7;
-    const wet = ctx.createGain(); wet.gain.value = 0.4;
-    dry.connect(master);
-    wet.connect(reverb);
-    reverb.connect(master);
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -16; comp.ratio.value = 4;
+    comp.connect(ctx.destination);
 
-    const send = (node) => { node.connect(dry); node.connect(wet); };
-
-    // ====== BRASS (trompete/orquestra) — sawtooth+square com filtro LPF e ADSR ======
-    function brass(freq, start, duration, vol) {
+    function crowd(start, dur, vol) {
       const t = now + start;
-      const o1 = ctx.createOscillator(); o1.type = 'sawtooth'; o1.frequency.value = freq;
-      const o2 = ctx.createOscillator(); o2.type = 'square';   o2.frequency.value = freq; o2.detune.value = 7;
-      const o3 = ctx.createOscillator(); o3.type = 'sawtooth'; o3.frequency.value = freq * 2; // brilho
-      const og3 = ctx.createGain(); og3.gain.value = 0.18;
-
-      const filter = ctx.createBiquadFilter();
-      filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(freq * 3, t);
-      filter.frequency.linearRampToValueAtTime(freq * 5, t + 0.05);
-      filter.frequency.linearRampToValueAtTime(freq * 3, t + duration);
-      filter.Q.value = 4;
-
-      const g = ctx.createGain();
-      // ADSR brass-like: attack rápido, decay leve, sustain firme, release suave
-      g.gain.setValueAtTime(0, t);
-      g.gain.linearRampToValueAtTime(vol, t + 0.035);
-      g.gain.linearRampToValueAtTime(vol * 0.78, t + 0.12);
-      g.gain.setValueAtTime(vol * 0.78, t + Math.max(0.12, duration - 0.18));
-      g.gain.exponentialRampToValueAtTime(0.001, t + duration);
-
-      o1.connect(filter); o2.connect(filter); o3.connect(og3); og3.connect(filter);
-      filter.connect(g);
-      send(g);
-
-      [o1, o2, o3].forEach(o => { o.start(t); o.stop(t + duration + 0.1); });
-    }
-
-    // ====== DRUM KICK (sub-bass com pitch envelope) ======
-    function kick(start, vol) {
-      const t = now + start;
-      const o = ctx.createOscillator();
-      o.type = 'sine';
-      o.frequency.setValueAtTime(180, t);
-      o.frequency.exponentialRampToValueAtTime(35, t + 0.18);
-      const g = ctx.createGain();
-      g.gain.setValueAtTime(vol, t);
-      g.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
-      o.connect(g); g.connect(dry);
-      o.start(t); o.stop(t + 0.25);
-    }
-
-    // ====== SNARE (ruído filtrado + tom curto) ======
-    function snare(start, vol) {
-      const t = now + start;
-      const bsz = (rate * 0.25) | 0;
-      const b = ctx.createBuffer(1, bsz, rate);
-      const d = b.getChannelData(0);
-      for (let i = 0; i < bsz; i++) d[i] = Math.random() * 2 - 1;
-      const n = ctx.createBufferSource(); n.buffer = b;
-      const f = ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 1200;
-      const g = ctx.createGain();
-      g.gain.setValueAtTime(vol, t);
-      g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
-      n.connect(f); f.connect(g); send(g);
-      n.start(t); n.stop(t + 0.2);
-    }
-
-    // ====== CRASH CYMBAL (ruído branco com HPF + decay longo) ======
-    function crash(start, vol) {
-      const t = now + start;
-      const bsz = (rate * 2.0) | 0;
-      const b = ctx.createBuffer(1, bsz, rate);
-      const d = b.getChannelData(0);
-      for (let i = 0; i < bsz; i++) d[i] = (Math.random() * 2 - 1) * 0.6;
-      const n = ctx.createBufferSource(); n.buffer = b;
-      const f = ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 5000;
-      const g = ctx.createGain();
-      g.gain.setValueAtTime(vol, t);
-      g.gain.exponentialRampToValueAtTime(0.001, t + 1.6);
-      n.connect(f); f.connect(g); send(g);
-      n.start(t); n.stop(t + 1.7);
-    }
-
-    // ====== BELL (sino metálico inarmônico) ======
-    function bell(start, freq, vol) {
-      const t = now + start;
-      const partials = [
-        { f: freq,         g: vol,        d: 1.8 },
-        { f: freq * 2.76,  g: vol * 0.55, d: 0.9 },
-        { f: freq * 5.40,  g: vol * 0.30, d: 0.5 },
-      ];
-      partials.forEach(p => {
-        const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = p.f;
-        const g = ctx.createGain();
-        g.gain.setValueAtTime(p.g, t);
-        g.gain.exponentialRampToValueAtTime(0.001, t + p.d);
-        o.connect(g); send(g);
-        o.start(t); o.stop(t + p.d + 0.05);
-      });
-    }
-
-    // ====== MULTIDÃO (pink noise filtrado, envelope longo) ======
-    function crowd(start, duration, vol) {
-      const t = now + start;
-      const bsz = (rate * duration) | 0;
-      const b = ctx.createBuffer(1, bsz, rate);
-      const d = b.getChannelData(0);
+      const bsz = (rate * dur) | 0;
+      const buf = ctx.createBuffer(1, bsz, rate);
+      const d = buf.getChannelData(0);
       let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
       for (let i = 0; i < bsz; i++) {
-        const w = Math.random() * 2 - 1;
-        b0 = 0.99886*b0 + w*0.0555179;
-        b1 = 0.99332*b1 + w*0.0750759;
-        b2 = 0.96900*b2 + w*0.1538520;
-        b3 = 0.86650*b3 + w*0.3104856;
-        b4 = 0.55000*b4 + w*0.5329522;
-        b5 = -0.7616*b5 - w*0.0168980;
+        const w = Math.random()*2-1;
+        b0=0.99886*b0+w*0.0555179; b1=0.99332*b1+w*0.0750759;
+        b2=0.96900*b2+w*0.1538520; b3=0.86650*b3+w*0.3104856;
+        b4=0.55000*b4+w*0.5329522; b5=-0.7616*b5-w*0.0168980;
         d[i] = (b0+b1+b2+b3+b4+b5+b6+w*0.5362)*0.11;
         b6 = w*0.115926;
       }
-      const n = ctx.createBufferSource(); n.buffer = b;
-      const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1800; f.Q.value = 0.7;
+      const src = ctx.createBufferSource(); src.buffer = buf;
+      const bpf = ctx.createBiquadFilter();
+      bpf.type='bandpass'; bpf.frequency.value=1800; bpf.Q.value=0.6;
       const g = ctx.createGain();
       g.gain.setValueAtTime(0, t);
-      g.gain.linearRampToValueAtTime(vol, t + 0.35);
-      g.gain.linearRampToValueAtTime(vol * 0.85, t + duration - 0.6);
-      g.gain.exponentialRampToValueAtTime(0.001, t + duration);
-      n.connect(f); f.connect(g); send(g);
-      n.start(t); n.stop(t + duration);
+      g.gain.linearRampToValueAtTime(vol, t + 0.5);
+      g.gain.linearRampToValueAtTime(vol * 0.8, t + dur - 0.8);
+      g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      src.connect(bpf); bpf.connect(g); g.connect(comp);
+      src.start(t); src.stop(t + dur);
     }
 
-    // ============================================================
-    // ORQUESTRAÇÃO — Fanfarra Olímpica
-    // ============================================================
-    // Notas (Hz): C4=261.63 · C5=523.25 · E5=659.25 · G5=783.99 · C6=1046.5 · E6=1318.5 · G6=1567.98
-
-    // [0.00] Tarola/snare roll subindo (3 hits em crescendo)
-    snare(0.00, 0.18); snare(0.10, 0.22); snare(0.20, 0.28);
-
-    // [0.35] Bar 1: três notas de impulso (Da-Da-Da)
-    brass(523.25, 0.35, 0.17, 0.32);   // C5
-    brass(659.25, 0.52, 0.17, 0.34);   // E5
-    brass(783.99, 0.69, 0.17, 0.36);   // G5
-
-    // [0.90] PRIMEIRO ACORDE FORTE (DAAA!) com kick + crash + acorde C maior alto
-    kick(0.90, 0.85); snare(0.90, 0.4); crash(0.90, 0.55);
-    brass(1046.5, 0.90, 1.25, 0.42);   // C6
-    brass(783.99, 0.90, 1.25, 0.32);   // G5
-    brass(659.25, 0.90, 1.25, 0.32);   // E5
-    brass(261.63, 0.90, 1.25, 0.45);   // C4 (baixo)
-
-    // [2.30] Bar 2: subida (Da-Da-Da mais agudo)
-    brass(659.25, 2.30, 0.17, 0.34);   // E5
-    brass(783.99, 2.47, 0.17, 0.36);   // G5
-    brass(1046.5, 2.64, 0.17, 0.38);   // C6
-
-    // [2.85] ACORDE FINAL ÉPICO (E maior + bass), kick + crash forte
-    kick(2.85, 1.0); snare(2.85, 0.5); crash(2.85, 0.7);
-    brass(1318.5, 2.85, 2.0, 0.5);     // E6 (topo)
-    brass(1046.5, 2.85, 2.0, 0.42);    // C6
-    brass(783.99, 2.85, 2.0, 0.36);    // G5
-    brass(523.25, 2.85, 2.0, 0.36);    // C5
-    brass(261.63, 2.85, 2.0, 0.48);    // C4 (baixo profundo)
-
-    // [3.10] Sinos brilhantes (sparkle) descendo
-    bell(3.10, 2637.02, 0.38);  // E7
-    bell(3.45, 2093.00, 0.34);  // C7
-    bell(3.80, 1567.98, 0.30);  // G6
-
-    // [2.95] MULTIDÃO COMEMORA (4 segundos)
-    crowd(2.95, 4.0, 0.35);
-
-    // [4.20] Kick final p/ fechar
-    kick(4.20, 0.6); crash(4.20, 0.4);
+    // Nível 1: palminhas discretas (0.5s delay para não cobrir o início do MP3)
+    // Nível 2: multidão maior, mais longa
+    // Nível 3: multidão máxima + segunda onda
+    if (lvl === 1) crowd(0.5, 2.0, 0.18);
+    if (lvl === 2) crowd(0.4, 3.5, 0.28);
+    if (lvl >= 3) { crowd(0.3, 5.0, 0.38); crowd(1.5, 4.0, 0.22); }
 
   } catch (e) {
-    console.error('Erro ao tocar fanfarra:', e);
+    console.error('Erro na camada de multidão:', e);
   }
 }
 
@@ -655,24 +737,29 @@ function playFanfare() {
 let confettiAnimId = null;
 let confettiPieces = [];
 
-function startConfetti() {
+function startConfetti(intensity) {
+  const lvl = Math.max(1, Math.min(3, intensity || 1));
   const canvas = document.getElementById('confetti-canvas');
   const ctx = canvas.getContext('2d');
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
 
   const colors = ['#ffd700', '#00d9ff', '#7c4dff', '#00e676', '#ff5252', '#ff9800', '#ff6b35'];
+  // Mais partículas e variação visual conforme intensidade
+  const totalPieces = lvl === 3 ? 600 : (lvl === 2 ? 400 : 250);
+  const maxSize     = lvl === 3 ? 18  : (lvl === 2 ? 14  : 10);
+  const maxSpeed    = lvl === 3 ? 9   : (lvl === 2 ? 7   : 5);
   confettiPieces = [];
-  for (let i = 0; i < 250; i++) {
+  for (let i = 0; i < totalPieces; i++) {
     confettiPieces.push({
       x: Math.random() * canvas.width,
       y: -20 - Math.random() * canvas.height,
-      vx: (Math.random() - 0.5) * 5,
-      vy: 2 + Math.random() * 5,
-      size: 5 + Math.random() * 10,
+      vx: (Math.random() - 0.5) * maxSpeed,
+      vy: 2 + Math.random() * maxSpeed,
+      size: 5 + Math.random() * maxSize,
       color: colors[Math.floor(Math.random() * colors.length)],
       rot: Math.random() * Math.PI * 2,
-      vrot: (Math.random() - 0.5) * 0.25,
+      vrot: (Math.random() - 0.5) * 0.3,
     });
   }
 
@@ -729,15 +816,19 @@ async function init() {
 
   // Atalhos
   document.addEventListener('keydown', e => {
-    if (e.key === 't' || e.key === 'T') {
+    const dispararTeste = (lvl) => {
       celebrationQueue.push({
         vendedor: lastData && lastData.ranking[0] ? lastData.ranking[0].nome : 'Bella Rosa',
         negocio: 'TESTE - Contrato Simulado',
         funil: '1. Trabalhista',
         valor: 5000,
+        intensity: lvl,
       });
       processCelebrationQueue();
-    }
+    };
+    if (e.key === 't' || e.key === 'T') dispararTeste(1); // celebração padrão
+    if (e.key === 'y' || e.key === 'Y') dispararTeste(2); // meta do dia batida
+    if (e.key === 'u' || e.key === 'U') dispararTeste(3); // hat trick
     if (e.key === 'n' || e.key === 'N') { nextSlide(); resetTimerIfNotPinned(); }
     if (e.key === 'p' || e.key === 'P') { prevSlide(); resetTimerIfNotPinned(); }
     if (e.key === 'f' || e.key === 'F') togglePin();
