@@ -5,3 +5,9 @@ node_modules/
 .vercel
 *.log
 Thumbs.db
+
+# Código do Apps Script (contém a chave da API do Pipedrive — nunca versionar)
+apps-script.js
+code.gs
+pipedrive.gs
+Code.gs

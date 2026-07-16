@@ -7,13 +7,18 @@ const API = CFG.APPS_SCRIPT_URL;
 
 // ============ ESTADO ============
 let currentSlide = 0;
-const slides = ['slide-geral', 'slide-ranking'];
+const slides = ['slide-geral', 'slide-ranking', 'slide-conversao'];
 let slideTimer = null;
 let lastEventTimestamp = new Date().toISOString();
 let celebrationQueue = [];
 let isCelebrating = false;
 let lastData = null;
 let isPinned = false;
+
+// Whitelist de funis em que a celebração pode acontecer.
+// Defesa em camadas: o backend já filtra, mas revalidamos aqui para garantir
+// que nenhum evento de funil indevido (ex.: "1. Jurídico Trabalhista") dispare a animação.
+const FUNIS_CELEBRACAO_PERMITIDOS = ['1. Trabalhista', '2. Servidor Público', '2. Servidor Público - Indicação'];
 
 // Pré-carrega o MP3 de celebração para evitar delay na hora do evento
 let _celebracaoAudio = null;
@@ -111,18 +116,31 @@ function showLoadingError(htmlMsg) {
   loading.classList.remove('hidden');
 }
 
-/** Aplica configurações vindas do servidor (ex: intervalo de slide) sem recarregar a página */
+/** Aplica configurações vindas do servidor sem recarregar a página */
 function aplicarConfigDinamica(config) {
   if (!config) return;
+  let changed = false;
+
+  const novoDash = Number(config.intervaloDashboard);
+  if (novoDash > 0 && novoDash !== CFG.DASHBOARD_DURATION_SECONDS) {
+    CFG.DASHBOARD_DURATION_SECONDS = novoDash;
+    changed = true;
+  }
+  const novoRank = Number(config.intervaloRanking);
+  if (novoRank > 0 && novoRank !== CFG.RANKING_DURATION_SECONDS) {
+    CFG.RANKING_DURATION_SECONDS = novoRank;
+    changed = true;
+  }
+  // Retrocompatibilidade: intervaloSlide aplica a ambos se os individuais não vieram
   const novoIntervalo = Number(config.intervaloSlide);
-  if (novoIntervalo > 0 && novoIntervalo !== CFG.SLIDE_DURATION_SECONDS) {
-    console.log(`Intervalo de slide alterado: ${CFG.SLIDE_DURATION_SECONDS}s → ${novoIntervalo}s`);
-    CFG.SLIDE_DURATION_SECONDS = novoIntervalo;
-    // Reinicia a rotação para aplicar o novo intervalo imediatamente
-    if (!isPinned && !isCelebrating) {
-      stopSlideRotation();
-      startSlideRotation();
-    }
+  if (novoIntervalo > 0 && !novoDash && !novoRank) {
+    if (novoIntervalo !== CFG.DASHBOARD_DURATION_SECONDS) { CFG.DASHBOARD_DURATION_SECONDS = novoIntervalo; changed = true; }
+    if (novoIntervalo !== CFG.RANKING_DURATION_SECONDS)   { CFG.RANKING_DURATION_SECONDS   = novoIntervalo; changed = true; }
+  }
+
+  if (changed && !isPinned && !isCelebrating) {
+    stopSlideRotation();
+    startSlideRotation();
   }
 }
 
@@ -204,13 +222,20 @@ function renderDashboard(data) {
   } else {
     renderRankingCards(data.ranking);
   }
+
+  // Ranking por conversão (Slide 3)
+  renderConversao(data.ranking);
 }
 
 function renderMiniRank(containerId, ranking, areaKey) {
   const container = document.getElementById(containerId);
   if (!container) return;
+
+  // Cada linha da planilha (nome + área) vira uma entrada distinta no ranking,
+  // então basta filtrar pela área cadastrada do entry para isolar cada card.
   const filtrado = ranking
     .filter(v => areaClass(v.area) === (areaKey === 'serv' ? 'area-serv' : 'area-trab'))
+    .sort((a, b) => b.contratos.mes - a.contratos.mes)
     .slice(0, 3);
 
   container.innerHTML = '';
@@ -225,7 +250,7 @@ function renderMiniRank(containerId, ranking, areaKey) {
   filtrado.forEach((v, i) => {
     const fotoUrl = fixDriveUrl(v.foto);
     const fb = fotoSVG(v.nome[0], cor);
-    const streakHtml = (v.streak || 0) > 0
+    const streakHtml = (v.streak || 0) >= 2
       ? `<span class="ami-streak">🔥${v.streak}</span>` : '';
     const row = document.createElement('div');
     row.className = 'ami-row';
@@ -255,6 +280,15 @@ function paceStatus(contratosMes, metaMes, diasDecorridos, diasTotal) {
   return                    { tag: '🔴', cls: 'pace-red',    label: 'Perigo'   };
 }
 
+/** Pace de conversão: compara conversão% do vendedor com a meta de conversão% */
+function convPaceStatus(conversao, metaConv) {
+  if (!metaConv) return { tag: '—', cls: 'pace-neutral' };
+  const ratio = conversao / metaConv;
+  if (ratio >= 1.00) return { tag: '🟢 No ritmo',  cls: 'pace-green'  };
+  if (ratio >= 0.80) return { tag: '🟡 Atenção',   cls: 'pace-yellow' };
+  return                    { tag: '🔴 Perigo',    cls: 'pace-red'    };
+}
+
 function badgesVendedora(v, pos) {
   const out = [];
   // (a coroa do #1 fica como faixa "LÍDER" no card; aqui só conquistas comuns)
@@ -268,9 +302,9 @@ function badgesVendedora(v, pos) {
 function setaPosicao(posAtual, posAnterior) {
   if (posAnterior == null) return { txt: 'NEW', cls: 'arr-new' };
   const delta = posAnterior - posAtual; // positivo = subiu
-  if (delta > 0)  return { txt: '↑' + delta, cls: 'arr-up'   };
-  if (delta < 0)  return { txt: '↓' + (-delta), cls: 'arr-down' };
-  return            { txt: '→',  cls: 'arr-same' };
+  if (delta > 0)  return { txt: '▲' + delta, cls: 'arr-up'   };
+  if (delta < 0)  return { txt: '▼' + (-delta), cls: 'arr-down' };
+  return            { txt: '◆',  cls: 'arr-same' };
 }
 
 function renderRanking(ranking) {
@@ -295,12 +329,13 @@ function renderRanking(ranking) {
     const badges = badgesVendedora(v, pos);
     const arrow = setaPosicao(pos, v.posicao_anterior);
 
-    // Chase indicator (a quantos contratos está de ultrapassar quem está acima)
+    // Chase indicator (a quantos contratos está de alcançar/ultrapassar quem está acima)
     let chase = '';
     if (pos > 1) {
       const acima = ranking[i - 1];
       const diff = acima.contratos.mes - v.contratos.mes;
       if (diff === 0)      chase = `Empatada com <strong>${acima.nome}</strong> — próximo contrato assume o ${pos - 1}º`;
+      else if (diff === 1) chase = `A <strong>1</strong> de alcançar <strong>${acima.nome}</strong>`;
       else                 chase = `A <strong>${diff}</strong> de ultrapassar <strong>${acima.nome}</strong>`;
     } else {
       const abaixo = ranking[i + 1];
@@ -312,7 +347,7 @@ function renderRanking(ranking) {
       }
     }
 
-    const streakHtml = (v.streak || 0) > 0
+    const streakHtml = (v.streak || 0) >= 2
       ? `<span class="rank-streak" title="${v.streak} dia(s) seguido(s) fechando">🔥${v.streak}</span>`
       : '';
 
@@ -325,7 +360,7 @@ function renderRanking(ranking) {
     item.style.animationDelay = (i * 0.1) + 's';
     item.innerHTML = `
       <div class="rank-position">
-        ${pos}°
+        <span class="rank-pos-num">${pos}°</span>
         <span class="rank-arrow ${arrow.cls}">${arrow.txt}</span>
       </div>
       <img class="rank-foto" src="${fotoUrl}" data-fallback="${fotoFallback}" alt="${v.nome}">
@@ -386,8 +421,9 @@ function renderRankingCards(ranking) {
     if (pos > 1) {
       const acima = ranking[i - 1];
       const diff = acima.contratos.mes - v.contratos.mes;
-      if (diff === 0) chase = `Empatada com <strong>${acima.nome}</strong>`;
-      else            chase = `A <strong>${diff}</strong> de ultrapassar <strong>${acima.nome.split(' ')[0]}</strong>`;
+      if (diff === 0)      chase = `Empatada com <strong>${acima.nome}</strong>`;
+      else if (diff === 1) chase = `A <strong>1</strong> de alcançar <strong>${acima.nome.split(' ')[0]}</strong>`;
+      else                 chase = `A <strong>${diff}</strong> de ultrapassar <strong>${acima.nome.split(' ')[0]}</strong>`;
     } else {
       const abaixo = ranking[i + 1];
       if (abaixo) {
@@ -398,7 +434,7 @@ function renderRankingCards(ranking) {
       }
     }
 
-    const streakHtml = (v.streak || 0) > 0
+    const streakHtml = (v.streak || 0) >= 2
       ? `<div class="vcard-streak">🔥 ${v.streak}</div>` : '';
 
     const badgesHtml = badges.map(b =>
@@ -410,8 +446,10 @@ function renderRankingCards(ranking) {
     card.style.animationDelay = (i * 0.08) + 's';
     card.innerHTML = `
       <div class="vcard-header">
-        <div class="vcard-pos">${pos}°</div>
-        <div class="vcard-arrow ${arrow.cls}">${arrow.txt}</div>
+        <div class="vcard-pos-grp">
+          <div class="vcard-pos">${pos}°</div>
+          <div class="vcard-arrow ${arrow.cls}">${arrow.txt}</div>
+        </div>
         <div class="vcard-pace ${pace.cls}">${pace.tag} ${pace.label}</div>
       </div>
 
@@ -465,47 +503,133 @@ function renderRankingCards(ranking) {
 
 function renderConversao(ranking) {
   const container = document.getElementById('conversao-list');
+  if (!container) return;
   container.innerHTML = '';
 
-  // Ordenar por conversão (desc)
   const ordenado = [...ranking].sort((a, b) => b.conversao - a.conversao);
-  const maxConv = Math.max(...ordenado.map(v => v.conversao), 5);
 
-  ordenado.forEach(v => {
-    const pct = (v.conversao / maxConv) * 100;
-    const cls = areaClass(v.area);
-    const cor = cls === 'area-serv' ? '#ff6b35' : '#00d9ff';
-    const fotoUrl = fixDriveUrl(v.foto);
-    const fotoFallback = fotoSVG(v.nome[0], cor);
+  const layoutConv = (lastData && lastData.config && lastData.config.rankingConversaoLayout)
+                  || CFG.RANKING_CONVERSAO_LAYOUT || 'cards';
 
-    const item = document.createElement('div');
-    item.className = 'conv-item ' + cls;
-    item.innerHTML = `
-      <img class="conv-foto" src="${fotoUrl}" data-fallback="${fotoFallback}" alt="${v.nome}">
-      <div class="conv-info">
-        <div class="conv-nome">${v.nome} ${areaBadge(v.area)}</div>
-        <div class="conv-detail">${v.contratos.mes} contratos · ${v.leads.mes} leads</div>
-        <div class="conv-bar"><div class="conv-bar-fill" style="width:${pct}%"></div></div>
-      </div>
-      <div class="conv-pct">${v.conversao.toFixed(1)}%</div>
-    `;
-    container.appendChild(item);
-  });
+  if (layoutConv === 'horizontal') {
+    container.className = 'ranking-list';
+    _renderConversaoHorizontal(container, ordenado);
+  } else {
+    container.className = 'ranking-cards-grid';
+    _renderConversaoCards(container, ordenado);
+  }
 
   container.querySelectorAll('img').forEach(img => {
     img.onerror = () => { img.src = img.dataset.fallback; img.onerror = null; };
   });
+}
 
-  // Destaque
-  const destaque = ordenado[0];
-  if (destaque) {
-    const cor = areaClass(destaque.area) === 'area-serv' ? '#ff6b35' : '#00d9ff';
-    const fotoEl = document.getElementById('destaque-foto');
-    fotoEl.src = fixDriveUrl(destaque.foto);
-    fotoEl.onerror = () => { fotoEl.src = fotoSVG(destaque.nome[0], cor); fotoEl.onerror = null; };
-    setText('destaque-nome', destaque.nome);
-    setText('destaque-stat', destaque.conversao.toFixed(2) + '%');
+function _buildConvChase(ordenado, i, pos) {
+  if (pos > 1) {
+    const acima = ordenado[i - 1];
+    const diff = (acima.conversao - ordenado[i].conversao).toFixed(1);
+    return diff === '0.0'
+      ? `Empatada com <strong>${acima.nome.split(' ')[0]}</strong>`
+      : `A <strong>${diff}%</strong> de alcançar <strong>${acima.nome.split(' ')[0]}</strong>`;
   }
+  const abaixo = ordenado[i + 1];
+  if (abaixo) {
+    const gap = (ordenado[i].conversao - abaixo.conversao).toFixed(1);
+    return Number(gap) > 0
+      ? `<strong>${gap}%</strong> à frente de <strong>${abaixo.nome.split(' ')[0]}</strong>`
+      : `<strong>${abaixo.nome.split(' ')[0]}</strong> empatada — defenda!`;
+  }
+  return '';
+}
+
+function _renderConversaoCards(container, ordenado) {
+  ordenado.forEach((v, i) => {
+    const pos = i + 1;
+    const cls = areaClass(v.area);
+    const cor = cls === 'area-serv' ? '#ff6b35' : '#00d9ff';
+    const fotoUrl = fixDriveUrl(v.foto);
+    const fotoFallback = fotoSVG(v.nome[0], cor);
+    const metaConv = Number(v.meta_conversao) || 0;
+    const pctMeta = metaConv > 0 ? Math.min(100, (v.conversao / metaConv) * 100) : 0;
+    const pace  = convPaceStatus(v.conversao, metaConv);
+    const chase = _buildConvChase(ordenado, i, pos);
+
+    const card = document.createElement('div');
+    card.className = 'vcard rank-' + pos + ' ' + cls;
+    card.style.animationDelay = (i * 0.08) + 's';
+    card.innerHTML = `
+      <div class="vcard-header">
+        <div class="vcard-pos">${pos}°</div>
+        <span class="vcard-pace ${pace.cls}">${pace.tag}</span>
+      </div>
+
+      <div class="vcard-photo-wrap">
+        <img class="vcard-photo" src="${fotoUrl}" data-fallback="${fotoFallback}" alt="${v.nome}">
+      </div>
+
+      <div class="vcard-name">${v.nome}</div>
+      <div class="vcard-area">${areaBadge(v.area)}</div>
+
+      <div class="conv-big-pct">${v.conversao.toFixed(1)}%</div>
+
+      <div class="vcard-progress">
+        <div class="vcard-progress-info">
+          <span>Meta: <strong>${metaConv}%</strong></span>
+          <span class="vcard-pct"><strong>${pctMeta.toFixed(0)}%</strong> da meta</span>
+        </div>
+        <div class="vcard-progress-bar">
+          <div class="vcard-progress-fill" style="width:${pctMeta}%"></div>
+        </div>
+      </div>
+
+      <div class="vcard-footer">
+        <div class="vcard-conv">${v.contratos.mes} contratos · ${v.leads.mes} leads</div>
+        <div class="vcard-chase">${chase}</div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function _renderConversaoHorizontal(container, ordenado) {
+  ordenado.forEach((v, i) => {
+    const pos = i + 1;
+    const cls = areaClass(v.area);
+    const cor = cls === 'area-serv' ? '#ff6b35' : '#00d9ff';
+    const fotoUrl = fixDriveUrl(v.foto);
+    const fotoFallback = fotoSVG(v.nome[0], cor);
+    const metaConv = Number(v.meta_conversao) || 0;
+    const pctMeta = metaConv > 0 ? Math.min(100, (v.conversao / metaConv) * 100) : 0;
+    const pace  = convPaceStatus(v.conversao, metaConv);
+    const chase = _buildConvChase(ordenado, i, pos);
+
+    const item = document.createElement('div');
+    item.className = 'ranking-item rank-' + pos + ' ' + cls;
+    item.style.animationDelay = (i * 0.1) + 's';
+    item.innerHTML = `
+      <div class="rank-position"><span class="rank-pos-num">${pos}°</span></div>
+      <img class="rank-foto" src="${fotoUrl}" data-fallback="${fotoFallback}" alt="${v.nome}">
+      <div class="rank-info">
+        <div class="rank-nome-line">
+          <span class="rank-nome">${v.nome}</span>
+          ${areaBadge(v.area)}
+        </div>
+        <div class="rank-chase">${chase}</div>
+        <div class="rank-stats">
+          <span>Contratos: <strong>${v.contratos.mes}</strong></span>
+          <span>Leads: <strong>${v.leads.mes}</strong></span>
+          <span>Meta conversão: <strong>${metaConv}%</strong></span>
+          <span class="rank-pace ${pace.cls}">${pace.tag}</span>
+        </div>
+        <div class="rank-bar"><div class="rank-bar-fill" style="width:${pctMeta}%"></div></div>
+      </div>
+      <div class="rank-numbers">
+        <div class="rank-big">${v.conversao.toFixed(1)}%</div>
+        <div class="rank-big-label">conversão<br>no mês</div>
+      </div>
+    `;
+    container.appendChild(item);
+  });
 }
 
 // ============ ROTAÇÃO DE SLIDES ============
@@ -527,14 +651,29 @@ function prevSlide() {
   showSlide((currentSlide - 1 + slides.length) % slides.length);
 }
 
+function getSlideDuration() {
+  return (currentSlide === 0
+    ? (CFG.DASHBOARD_DURATION_SECONDS || 20)
+    : (CFG.RANKING_DURATION_SECONDS   || 12)
+  ) * 1000;
+}
+
 function startSlideRotation() {
   stopSlideRotation();
   if (isPinned) return;
-  slideTimer = setInterval(nextSlide, CFG.SLIDE_DURATION_SECONDS * 1000);
+  function schedule() {
+    slideTimer = setTimeout(() => {
+      if (!isPinned && !isCelebrating) {
+        nextSlide();
+        schedule();
+      }
+    }, getSlideDuration());
+  }
+  schedule();
 }
 
 function stopSlideRotation() {
-  if (slideTimer) { clearInterval(slideTimer); slideTimer = null; }
+  if (slideTimer) { clearTimeout(slideTimer); slideTimer = null; }
 }
 
 function updateIndicator(active) {
@@ -582,87 +721,150 @@ async function checkEvents() {
   }
 }
 
+// Lê os toggles de celebração vindos do servidor (config).
+// Default: ambos LIGADOS. Só desliga com valor explicitamente falso.
+function celebracaoVisualAtiva() {
+  const c = (lastData && lastData.config) || {};
+  return !(c.celebracaoVisual === false || c.celebracaoVisual === 'false' || c.celebracaoVisual === 'FALSE');
+}
+function celebracaoSomAtivo() {
+  const c = (lastData && lastData.config) || {};
+  return !(c.celebracaoSom === false || c.celebracaoSom === 'false' || c.celebracaoSom === 'FALSE');
+}
+
 async function processCelebrationQueue() {
   if (isCelebrating || celebrationQueue.length === 0) return;
+  // Drena eventos com funil fora da whitelist sem celebrar.
+  // Eventos de teste (atalhos T/Y/U/1-5) trazem ev.intensity e bypassam a checagem.
+  while (celebrationQueue.length > 0) {
+    const peek = celebrationQueue[0];
+    const ehTeste = peek && peek.intensity != null;
+    const funil   = String((peek && peek.funil) || '').trim();
+    if (ehTeste || FUNIS_CELEBRACAO_PERMITIDOS.indexOf(funil) >= 0) break;
+    console.warn('[PQRS] Evento descartado — funil fora da whitelist:', funil, peek);
+    celebrationQueue.shift();
+  }
+  if (celebrationQueue.length === 0) return;
+
+  // Se ambas as celebrações (visual e som) estão desligadas nas configurações,
+  // apenas drena a fila sem animar/tocar — mas mantém os números atualizados.
+  if (!celebracaoVisualAtiva() && !celebracaoSomAtivo()) {
+    celebrationQueue = [];
+    refreshData();
+    setTimeout(refreshData, 3000);
+    return;
+  }
+
   isCelebrating = true;
   const ev = celebrationQueue.shift();
   await celebrate(ev);
   isCelebrating = false;
+  // Refresh imediato (cache já foi invalidado pelo webhook no servidor)
   refreshData();
+  // Segundo refresh após 3s para garantir que o Pipedrive já retornou o dado novo
+  setTimeout(refreshData, 3000);
   setTimeout(processCelebrationQueue, 1000);
 }
 
 async function celebrate(ev) {
-  stopSlideRotation();
+  const mostrarVisual = celebracaoVisualAtiva();
+  const tocarSom      = celebracaoSomAtivo();
 
   const cel = document.getElementById('celebracao');
 
-  // ─── Calcular intensidade baseada em contratos do dia ───
-  let contratosHojeAposEste = 1;
+  // Garante dados frescos antes de decidir a intensidade.
+  // O webhook invalidou o cache no servidor; este refresh traz o estado real
+  // logo após o contrato (sem precisar adivinhar com +1).
+  try { await refreshData(); } catch (e) {}
+
+  // ─── Localizar a vendedora certa ───
+  // Como a mesma pessoa pode ter 2 cadastros (uma por área), casamos também
+  // pela área derivada do funil do evento para pegar o registro correto.
+  const areaEvento = String(ev.funil || '').toLowerCase().includes('servidor') ? 'area-serv' : 'area-trab';
+  let contratosHoje   = 1;
+  let contratosSemana = 0;
+  let contratosMes    = 0;
   let metaDia = 2;
+  let metaMes = 0;
   let totalMes = '— no mês';
   let fotoUrl = '';
   const fotoFallback = fotoSVG((ev.vendedor || '?')[0], '#ffd700');
 
-  if (lastData) {
-    const v = lastData.ranking.find(x => x.nome === ev.vendedor);
+  if (lastData && lastData.ranking) {
+    const candidatos = lastData.ranking.filter(x => x.nome === ev.vendedor);
+    const v = candidatos.find(x => areaClass(x.area) === areaEvento) || candidatos[0];
     if (v) {
-      contratosHojeAposEste = (v.contratos.dia || 0) + 1;
+      // lastData já reflete o contrato recém-fechado, então NÃO somamos +1.
+      contratosHoje   = Math.max(v.contratos.dia || 0, 1);
+      contratosSemana = v.contratos.semana || 0;
+      contratosMes    = v.contratos.mes || 0;
       metaDia = v.meta_dia || 2;
-      totalMes = (v.contratos.mes + 1) + ' no mês';
+      metaMes = v.meta_mes || 0;
+      totalMes = v.contratos.mes + ' no mês';
       fotoUrl = fixDriveUrl(v.foto);
     }
   }
 
-  // Permite override via evento (ex: teste com T)
+  // Meta semanal: config só tem meta/dia e meta/mês, então derivamos a da semana
+  // como meta/dia × 5 dias úteis.
+  const metaSemana = metaDia > 0 ? metaDia * 5 : 0;
+
+  // Permite override via evento (ex: teste com atalhos T/Y/U)
   if (ev.intensity) {
-    contratosHojeAposEste = ev.intensity === 3 ? 3 : (ev.intensity === 2 ? metaDia : 1);
+    contratosHoje = ev.intensity === 3 ? 3 : (ev.intensity === 2 ? metaDia : 1);
   }
 
+  // ─── Decidir o nível da celebração (do mais prestigioso ao mais simples) ───
   let intensity = 1;
   let titulo = 'CONTRATO FECHADO!';
   let emoji = '🎉';
-  if (contratosHojeAposEste >= 3) {
-    intensity = 3;
-    titulo = 'HAT TRICK! 🎩';
-    emoji = '🚀';
-  } else if (contratosHojeAposEste >= metaDia) {
-    intensity = 2;
-    titulo = 'META DO DIA BATIDA!';
-    emoji = '🎯';
+  if (!ev.intensity && metaMes > 0 && contratosMes === metaMes) {
+    intensity = 3; titulo = 'META DO MÊS BATIDA!'; emoji = '🏆';
+  } else if (!ev.intensity && metaSemana > 0 && contratosSemana === metaSemana) {
+    intensity = 3; titulo = 'META DA SEMANA BATIDA!'; emoji = '🔥';
+  } else if (contratosHoje >= 3) {
+    intensity = 3; titulo = 'HAT TRICK!'; emoji = '🚀';
+  } else if (contratosHoje >= metaDia) {
+    intensity = 2; titulo = 'META DO DIA BATIDA!'; emoji = '🎯';
   }
 
-  // Aplicar classe de intensidade no container (CSS escalona o visual)
-  cel.classList.remove('cel-lvl-1', 'cel-lvl-2', 'cel-lvl-3');
-  cel.classList.add('cel-lvl-' + intensity);
+  // Som pode tocar mesmo com o visual desligado (controles independentes)
+  if (tocarSom) playFanfare(intensity);
 
-  // Atualizar textos
-  const tituloEl = cel.querySelector('h2');
-  if (tituloEl) tituloEl.textContent = titulo;
-  const emojiEl = cel.querySelector('.celebracao-emoji');
-  if (emojiEl) emojiEl.textContent = emoji;
+  if (mostrarVisual) {
+    stopSlideRotation();
 
-  setText('cel-nome', ev.vendedor || 'Vendedor');
-  setText('cel-negocio', ev.negocio || '');
-  setText('cel-funil', ev.funil || '');
-  setText('cel-total', totalMes);
+    // Aplicar classe de intensidade no container (CSS escalona o visual)
+    cel.classList.remove('cel-lvl-1', 'cel-lvl-2', 'cel-lvl-3');
+    cel.classList.add('cel-lvl-' + intensity);
 
-  const foto = document.getElementById('cel-foto');
-  foto.src = fotoUrl || fotoFallback;
-  foto.onerror = () => { foto.src = fotoFallback; foto.onerror = null; };
+    const tituloEl = cel.querySelector('h2');
+    if (tituloEl) tituloEl.textContent = titulo;
+    const emojiEl = cel.querySelector('.celebracao-emoji');
+    if (emojiEl) emojiEl.textContent = emoji;
 
-  cel.classList.remove('hidden');
+    setText('cel-nome', ev.vendedor || 'Vendedor');
+    setText('cel-negocio', ev.negocio || '');
+    setText('cel-funil', ev.funil || '');
+    setText('cel-total', totalMes);
 
-  // Som + confete proporcionais à intensidade
-  playFanfare(intensity);
-  startConfetti(intensity);
+    const foto = document.getElementById('cel-foto');
+    foto.src = fotoUrl || fotoFallback;
+    foto.onerror = () => { foto.src = fotoFallback; foto.onerror = null; };
 
-  const dur = (CFG.CELEBRATION_DURATION_SECONDS + (intensity - 1) * 1.5) * 1000;
-  await new Promise(r => setTimeout(r, dur));
+    cel.classList.remove('hidden');
+    startConfetti(intensity);
 
-  stopConfetti();
-  cel.classList.add('hidden');
-  if (!isPinned) startSlideRotation();
+    const dur = (CFG.CELEBRATION_DURATION_SECONDS + (intensity - 1) * 1.5) * 1000;
+    await new Promise(r => setTimeout(r, dur));
+
+    stopConfetti();
+    cel.classList.add('hidden');
+    if (!isPinned) startSlideRotation();
+  } else if (tocarSom) {
+    // Só som: mantém a rotação normal, apenas espera o áudio terminar
+    await new Promise(r => setTimeout(r, 4000));
+  }
 }
 
 // ============ CELEBRAÇÃO — MP3 + multidão sintetizada ============
@@ -816,19 +1018,23 @@ async function init() {
 
   // Atalhos
   document.addEventListener('keydown', e => {
-    const dispararTeste = (lvl) => {
+    const dispararTeste = (lvl, idx = 0) => {
+      const ranking = lastData && lastData.ranking;
+      const v = ranking && ranking[idx];
       celebrationQueue.push({
-        vendedor: lastData && lastData.ranking[0] ? lastData.ranking[0].nome : 'Bella Rosa',
+        vendedor: v ? v.nome : 'Bella Rosa',
         negocio: 'TESTE - Contrato Simulado',
-        funil: '1. Trabalhista',
+        funil: v ? (v.area || '1. Trabalhista') : '1. Trabalhista',
         valor: 5000,
         intensity: lvl,
       });
       processCelebrationQueue();
     };
-    if (e.key === 't' || e.key === 'T') dispararTeste(1); // celebração padrão
-    if (e.key === 'y' || e.key === 'Y') dispararTeste(2); // meta do dia batida
-    if (e.key === 'u' || e.key === 'U') dispararTeste(3); // hat trick
+    if (e.key === 't' || e.key === 'T') dispararTeste(1, 0); // 1ª do ranking
+    if (e.key === 'y' || e.key === 'Y') dispararTeste(2, 0); // meta do dia batida
+    if (e.key === 'u' || e.key === 'U') dispararTeste(3, 0); // hat trick
+    // Teclas 1-5: teste com vendedora específica pelo índice no ranking
+    if (e.key >= '1' && e.key <= '5') dispararTeste(1, Number(e.key) - 1);
     if (e.key === 'n' || e.key === 'N') { nextSlide(); resetTimerIfNotPinned(); }
     if (e.key === 'p' || e.key === 'P') { prevSlide(); resetTimerIfNotPinned(); }
     if (e.key === 'f' || e.key === 'F') togglePin();

@@ -49,19 +49,46 @@
     button.secondary { background: var(--bg-3); border: 1px solid var(--border); }
     .vendedor-card {
       display: grid;
-      grid-template-columns: 80px 2fr 2fr 1fr 1fr auto;
-      gap: 12px;
+      grid-template-columns: 70px 1fr 44px;
+      grid-template-areas:
+        "foto top-fields del"
+        "foto mid-fields del"
+        "foto bot-fields del";
+      gap: 10px 12px;
       align-items: center;
       background: var(--bg-1);
-      padding: 12px;
+      padding: 14px 16px;
       border-radius: 10px;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
     }
-    .vendedor-card img {
-      width: 60px; height: 60px; border-radius: 50%; object-fit: cover;
+    .vendedor-card .vc-foto-col { grid-area: foto; display: flex; justify-content: center; }
+    .vendedor-card .vc-del-col  { grid-area: del; }
+    .vendedor-card .vc-row {
+      display: grid;
+      gap: 8px;
+      align-items: end;
+    }
+    .vendedor-card .vc-row-top { grid-area: top-fields; grid-template-columns: 1.4fr 1.6fr 1fr; }
+    .vendedor-card .vc-row-mid { grid-area: mid-fields; grid-template-columns: 1fr 1fr 1fr; }
+    .vendedor-card .vc-row-bot { grid-area: bot-fields; grid-template-columns: 1fr 1fr; }
+    .vendedor-card .vc-field { display: flex; flex-direction: column; gap: 3px; }
+    .vendedor-card .vc-field label {
+      font-size: 0.62rem; color: var(--text-dim);
+      letter-spacing: 0.06em; text-transform: uppercase; font-weight: 700;
+    }
+    .vendedor-card .vc-field input,
+    .vendedor-card .vc-field select {
+      padding: 8px 10px; font-size: 0.9rem;
+    }
+    .vendedor-card button.danger {
+      width: 40px; height: 40px; padding: 0;
+      font-size: 1.2rem; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .vendedor-card img.vc-foto {
+      width: 56px; height: 56px; border-radius: 50%; object-fit: cover;
       background: var(--bg-3);
     }
-    .vendedor-card input, .vendedor-card select { padding: 8px 12px; font-size: 0.95rem; }
     .add-btn {
       width: 100%;
       padding: 14px;
@@ -97,55 +124,137 @@
 
     <div id="msg-area"></div>
 
-    <!-- Metas Mensais (separadas por área) -->
-    <div class="config-section">
-      <h2>🎯 Metas do Mês</h2>
-      <p style="color:var(--text-dim); margin-bottom:20px;">
-        Cada área tem sua própria meta independente. Os números aparecem no dashboard como progresso de cada área.
-      </p>
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 18px;">
-        <div class="field" style="background: rgba(0,217,255,0.05); border:1px solid var(--trabalhista); border-radius:10px; padding:18px;">
-          <label style="color: var(--trabalhista); font-weight:700;">⚖️ Meta Trabalhista</label>
-          <input type="number" id="meta-trab-input" min="1" placeholder="40">
-        </div>
-        <div class="field" style="background: rgba(255,107,53,0.05); border:1px solid var(--servidor); border-radius:10px; padding:18px;">
-          <label style="color: var(--servidor); font-weight:700;">🏛️ Meta Servidor Público</label>
-          <input type="number" id="meta-serv-input" min="1" placeholder="20">
-        </div>
-      </div>
-      <button onclick="salvarMetas()" style="margin-top:18px;">Salvar metas</button>
-    </div>
-
     <!-- Tempo de rotação dos slides -->
     <div class="config-section">
       <h2>⏱️ Rotação dos Slides</h2>
       <p style="color:var(--text-dim); margin-bottom:20px;">
-        Quanto tempo cada slide fica na tela antes de passar para o próximo (em segundos).
+        O dashboard é o foco — configure um tempo maior para ele. Os rankings (contratos e conversão) podem ter tempo menor.
       </p>
-      <div class="field">
-        <label>Duração de cada slide</label>
-        <div style="display:flex; gap:12px; align-items:center;">
-          <input type="number" id="intervalo-input" min="3" max="120" step="1" placeholder="15" style="max-width:200px;">
-          <span style="color:var(--text-dim);">segundos</span>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:18px;">
+        <div class="field" style="background:rgba(0,217,255,0.05); border:1px solid var(--accent); border-radius:10px; padding:18px;">
+          <label style="color:var(--accent); font-weight:700;">🖥️ Dashboard (Slide 1)</label>
+          <div style="display:flex; gap:10px; align-items:center; margin-top:8px;">
+            <input type="number" id="intervalo-dashboard-input" min="5" max="300" step="1" placeholder="20" style="max-width:130px;">
+            <span style="color:var(--text-dim);">segundos</span>
+          </div>
+          <div style="display:flex; gap:6px; margin-top:10px; flex-wrap:wrap;">
+            <button class="secondary" type="button" onclick="document.getElementById('intervalo-dashboard-input').value=15" style="padding:5px 10px; font-size:0.82rem;">15s</button>
+            <button class="secondary" type="button" onclick="document.getElementById('intervalo-dashboard-input').value=20" style="padding:5px 10px; font-size:0.82rem;">20s</button>
+            <button class="secondary" type="button" onclick="document.getElementById('intervalo-dashboard-input').value=30" style="padding:5px 10px; font-size:0.82rem;">30s</button>
+            <button class="secondary" type="button" onclick="document.getElementById('intervalo-dashboard-input').value=60" style="padding:5px 10px; font-size:0.82rem;">60s</button>
+          </div>
         </div>
-        <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
-          <button class="secondary" type="button" onclick="setIntervalo(10)" style="padding:6px 14px; font-size:0.85rem;">10s — rápido</button>
-          <button class="secondary" type="button" onclick="setIntervalo(15)" style="padding:6px 14px; font-size:0.85rem;">15s — padrão</button>
-          <button class="secondary" type="button" onclick="setIntervalo(30)" style="padding:6px 14px; font-size:0.85rem;">30s — pausado</button>
-          <button class="secondary" type="button" onclick="setIntervalo(60)" style="padding:6px 14px; font-size:0.85rem;">60s — longo</button>
+        <div class="field" style="background:rgba(124,77,255,0.05); border:1px solid var(--accent-2); border-radius:10px; padding:18px;">
+          <label style="color:var(--accent-2); font-weight:700;">🏆 Rankings (Slides 2 e 3)</label>
+          <div style="display:flex; gap:10px; align-items:center; margin-top:8px;">
+            <input type="number" id="intervalo-ranking-input" min="5" max="300" step="1" placeholder="12" style="max-width:130px;">
+            <span style="color:var(--text-dim);">segundos</span>
+          </div>
+          <div style="display:flex; gap:6px; margin-top:10px; flex-wrap:wrap;">
+            <button class="secondary" type="button" onclick="document.getElementById('intervalo-ranking-input').value=10" style="padding:5px 10px; font-size:0.82rem;">10s</button>
+            <button class="secondary" type="button" onclick="document.getElementById('intervalo-ranking-input').value=12" style="padding:5px 10px; font-size:0.82rem;">12s</button>
+            <button class="secondary" type="button" onclick="document.getElementById('intervalo-ranking-input').value=20" style="padding:5px 10px; font-size:0.82rem;">20s</button>
+            <button class="secondary" type="button" onclick="document.getElementById('intervalo-ranking-input').value=30" style="padding:5px 10px; font-size:0.82rem;">30s</button>
+          </div>
         </div>
       </div>
-      <button onclick="salvarIntervalo()" style="margin-top:10px;">Salvar tempo</button>
+      <button onclick="salvarTempos()" style="margin-top:18px;">Salvar tempos</button>
       <p style="color:var(--text-dim); font-size:0.8rem; margin-top:12px;">
-        💡 A mudança é aplicada automaticamente no dashboard na próxima atualização (até 60s).
+        💡 Mudança aplicada automaticamente no dashboard na próxima atualização (até 60s).
       </p>
+    </div>
+
+    <!-- Layout do ranking -->
+    <div class="config-section">
+      <h2>🎴 Layout do Ranking do Time</h2>
+      <p style="color:var(--text-dim); margin-bottom:20px;">
+        Escolha como o slide de ranking aparece na TV.
+      </p>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+        <label class="layout-opt" style="display:flex; flex-direction:column; gap:8px; padding:18px; background:var(--bg-1); border:2px solid var(--border); border-radius:12px; cursor:pointer;" data-layout="cards">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <input type="radio" name="ranking-layout" value="cards" id="layout-cards">
+            <strong style="color:var(--accent);">🎴 Cards (vertical)</strong>
+          </div>
+          <span style="color:var(--text-dim); font-size:0.85rem;">
+            Cada vendedora em um card 3D — ideal para TV grande, visual estilo "carta de RPG".
+          </span>
+        </label>
+        <label class="layout-opt" style="display:flex; flex-direction:column; gap:8px; padding:18px; background:var(--bg-1); border:2px solid var(--border); border-radius:12px; cursor:pointer;" data-layout="horizontal">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <input type="radio" name="ranking-layout" value="horizontal" id="layout-horizontal">
+            <strong style="color:var(--accent);">📊 Lista horizontal</strong>
+          </div>
+          <span style="color:var(--text-dim); font-size:0.85rem;">
+            Linha por vendedora, com todos os dados lado a lado — mais compacto.
+          </span>
+        </label>
+      </div>
+      <button onclick="salvarLayout()" style="margin-top:18px;">Salvar layout</button>
+    </div>
+
+    <!-- Layout do ranking por conversão -->
+    <div class="config-section">
+      <h2>📊 Layout do Ranking por Conversão</h2>
+      <p style="color:var(--text-dim); margin-bottom:20px;">
+        Escolha como o slide de ranking por conversão aparece na TV.
+      </p>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+        <label class="layout-conv-opt" style="display:flex; flex-direction:column; gap:8px; padding:18px; background:var(--bg-1); border:2px solid var(--border); border-radius:12px; cursor:pointer;" data-layout="cards">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <input type="radio" name="ranking-conv-layout" value="cards" id="conv-layout-cards">
+            <strong style="color:var(--accent);">🎴 Cards (vertical)</strong>
+          </div>
+          <span style="color:var(--text-dim); font-size:0.85rem;">
+            Cada vendedora em um card — ideal para TV grande, mostra % de conversão em destaque.
+          </span>
+        </label>
+        <label class="layout-conv-opt" style="display:flex; flex-direction:column; gap:8px; padding:18px; background:var(--bg-1); border:2px solid var(--border); border-radius:12px; cursor:pointer;" data-layout="horizontal">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <input type="radio" name="ranking-conv-layout" value="horizontal" id="conv-layout-horizontal">
+            <strong style="color:var(--accent);">📊 Lista horizontal</strong>
+          </div>
+          <span style="color:var(--text-dim); font-size:0.85rem;">
+            Linha por vendedora com todos os dados lado a lado — mais compacto.
+          </span>
+        </label>
+      </div>
+      <button onclick="salvarLayoutConversao()" style="margin-top:18px;">Salvar layout</button>
+    </div>
+
+    <!-- Celebrações -->
+    <div class="config-section">
+      <h2>🎉 Celebrações de Contrato Fechado</h2>
+      <p style="color:var(--text-dim); margin-bottom:20px;">
+        Liga/desliga a animação e o som de comemoração para <strong>todos</strong> os dashboards abertos.
+        A mudança chega em cada tela em até 90 segundos.
+      </p>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+        <label style="display:flex; align-items:center; gap:12px; padding:18px; background:var(--bg-1); border:1px solid var(--border); border-radius:12px; cursor:pointer;">
+          <input type="checkbox" id="cel-visual" style="width:22px; height:22px; cursor:pointer;">
+          <div>
+            <strong style="color:var(--accent);">🎊 Celebração visual</strong>
+            <div style="color:var(--text-dim); font-size:0.85rem;">Animação, confete e foto na tela.</div>
+          </div>
+        </label>
+        <label style="display:flex; align-items:center; gap:12px; padding:18px; background:var(--bg-1); border:1px solid var(--border); border-radius:12px; cursor:pointer;">
+          <input type="checkbox" id="cel-som" style="width:22px; height:22px; cursor:pointer;">
+          <div>
+            <strong style="color:var(--accent);">🔊 Celebração sonora</strong>
+            <div style="color:var(--text-dim); font-size:0.85rem;">Som de comemoração ao fechar contrato.</div>
+          </div>
+        </label>
+      </div>
+      <button onclick="salvarCelebracoes()" style="margin-top:18px;">Salvar celebrações</button>
     </div>
 
     <!-- Vendedoras -->
     <div class="config-section">
       <h2>👥 Vendedoras</h2>
       <p style="color:var(--text-dim); margin-bottom:20px;">
-        O nome deve bater <strong>exatamente</strong> com o nome do usuário no Pipedrive.
+        O nome deve bater <strong>exatamente</strong> com o nome do usuário no Pipedrive.<br>
+        <span style="font-size:0.85rem;">💡 <strong>Meta/dia</strong>: usada na gamificação (2 contratos = meta do dia batida = comemoração maior).<br>
+        💡 <strong>Meta/mês</strong>: deixe vazio para usar automaticamente <em>meta/dia × 22 dias úteis</em>.</span>
       </p>
       <div id="vendedores-list"></div>
       <button class="add-btn" onclick="addVendedor()">+ Adicionar vendedor(a)</button>
@@ -153,6 +262,7 @@
         <button onclick="salvarVendedores()">Salvar lista</button>
         <button class="secondary" onclick="carregar()">Cancelar / Recarregar</button>
       </div>
+      <div id="msg-vendedores" style="margin-top:12px;"></div>
     </div>
 
     <!-- Teste -->
@@ -205,10 +315,23 @@
       }
       try {
         const cfg = await fetchJSON('config');
-        // Compatibilidade: se só existir metaMensal antiga, usa como Trabalhista
-        document.getElementById('meta-trab-input').value = cfg.metaTrabalhista || cfg.metaMensal || 40;
-        document.getElementById('meta-serv-input').value = cfg.metaServidor || 20;
-        document.getElementById('intervalo-input').value = cfg.intervaloSlide || 15;
+        document.getElementById('intervalo-dashboard-input').value = cfg.intervaloDashboard || cfg.intervaloSlide || 20;
+        document.getElementById('intervalo-ranking-input').value = cfg.intervaloRanking || cfg.intervaloSlide || 12;
+        // Layout do ranking (contratos)
+        const layout = cfg.rankingLayout || 'cards';
+        const radio = document.querySelector(`input[name="ranking-layout"][value="${layout}"]`);
+        if (radio) radio.checked = true;
+        syncLayoutVisual();
+        // Layout do ranking por conversão
+        const layoutConv = cfg.rankingConversaoLayout || 'cards';
+        const radioConv = document.querySelector(`input[name="ranking-conv-layout"][value="${layoutConv}"]`);
+        if (radioConv) radioConv.checked = true;
+        syncLayoutConvVisual();
+
+        // Toggles de celebração (default: ligados — só false explícito desliga)
+        const desligado = (v) => v === false || v === 'false' || v === 'FALSE';
+        document.getElementById('cel-visual').checked = !desligado(cfg.celebracaoVisual);
+        document.getElementById('cel-som').checked    = !desligado(cfg.celebracaoSom);
 
         const vs = await fetchJSON('vendedores');
         vendedores = Array.isArray(vs) ? vs : [];
@@ -218,29 +341,95 @@
       }
     }
 
+    // Placeholder cinza usado quando não há foto ou ela falha ao carregar
+    const PLACEHOLDER_FOTO = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 60 60%22%3E%3Crect fill=%22%231c2138%22 width=%2260%22 height=%2260%22/%3E%3Ctext x=%2230%22 y=%2238%22 font-size=%2222%22 text-anchor=%22middle%22 fill=%22%239ba3b8%22%3E?%3C/text%3E%3C/svg%3E';
+
+    /** Converte URLs do Google Drive em formato que carrega como imagem (igual ao dashboard) */
+    function fixDriveUrl(url) {
+      if (!url) return '';
+      let id = null;
+      let m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+      if (m) id = m[1];
+      if (!id) {
+        m = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+        if (m) id = m[1];
+      }
+      if (!id) return url;
+      return 'https://lh3.googleusercontent.com/d/' + id + '=w400-h400';
+    }
+
     function renderVendedores() {
       const container = document.getElementById('vendedores-list');
       container.innerHTML = '';
       vendedores.forEach((v, i) => {
+        const fotoSrc = v.foto ? fixDriveUrl(v.foto) : PLACEHOLDER_FOTO;
         const div = document.createElement('div');
         div.className = 'vendedor-card';
         div.innerHTML = `
-          <img src="${v.foto || ''}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 60 60%22%3E%3Crect fill=%22%231c2138%22 width=%2260%22 height=%2260%22/%3E%3Ctext x=%2230%22 y=%2238%22 font-size=%2222%22 text-anchor=%22middle%22 fill=%22%239ba3b8%22%3E?%3C/text%3E%3C/svg%3E'">
-          <input type="text" value="${v.nome}" placeholder="Nome" oninput="vendedores[${i}].nome=this.value">
-          <input type="text" value="${v.foto || ''}" placeholder="URL da foto" oninput="vendedores[${i}].foto=this.value">
-          <select onchange="vendedores[${i}].area=this.value">
-            <option value="Trabalhista" ${v.area==='Trabalhista'?'selected':''}>Trabalhista</option>
-            <option value="Servidor Público" ${v.area==='Servidor Público'?'selected':''}>Servidor Público</option>
-          </select>
-          <input type="number" value="${v.meta_dia || 2}" min="0" placeholder="Meta/dia" oninput="vendedores[${i}].meta_dia=Number(this.value)">
-          <button class="danger" onclick="removerVendedor(${i})">×</button>
+          <div class="vc-foto-col">
+            <img class="vc-foto" src="${fotoSrc}" onerror="this.src='${PLACEHOLDER_FOTO}'">
+          </div>
+
+          <div class="vc-row vc-row-top">
+            <div class="vc-field">
+              <label>Nome (exato do Pipedrive)</label>
+              <input type="text" value="${v.nome || ''}" placeholder="Nome" oninput="vendedores[${i}].nome=this.value">
+            </div>
+            <div class="vc-field">
+              <label>URL da foto</label>
+              <input type="text" value="${v.foto || ''}" placeholder="https://..." oninput="vendedores[${i}].foto=this.value; const img=this.closest('.vendedor-card').querySelector('.vc-foto'); img.src=this.value?fixDriveUrl(this.value):'${PLACEHOLDER_FOTO}'; img.onerror=()=>img.src='${PLACEHOLDER_FOTO}';">
+            </div>
+            <div class="vc-field">
+              <label>Área</label>
+              <select onchange="vendedores[${i}].area=this.value">
+                <option value="Trabalhista" ${v.area==='Trabalhista'?'selected':''}>Trabalhista</option>
+                <option value="Servidor Público" ${v.area==='Servidor Público'?'selected':''}>Servidor Público</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="vc-row vc-row-mid">
+            <div class="vc-field">
+              <label>Meta/dia</label>
+              <input type="number" value="${v.meta_dia || 2}" min="0" oninput="vendedores[${i}].meta_dia=Number(this.value)">
+            </div>
+            <div class="vc-field">
+              <label>Meta/mês (vazio = auto)</label>
+              <input type="number" value="${v.meta_mes || ''}" min="0" placeholder="auto" oninput="vendedores[${i}].meta_mes=Number(this.value)||0">
+            </div>
+            <div class="vc-field">
+              <label>Meta de conversão (%)</label>
+              <input type="number" value="${v.meta_conversao || ''}" min="0.1" max="100" step="0.1" placeholder="5.0" oninput="vendedores[${i}].meta_conversao=Number(this.value)||0">
+            </div>
+          </div>
+
+          <div class="vc-row vc-row-bot">
+            <div class="vc-field">
+              <label>Data de entrada</label>
+              <input type="date" value="${v.data_entrada || ''}" oninput="vendedores[${i}].data_entrada=this.value">
+            </div>
+            <div class="vc-field">
+              <label>Data de saída (some no mês seguinte)</label>
+              <input type="date" value="${v.data_saida || ''}" oninput="vendedores[${i}].data_saida=this.value">
+            </div>
+          </div>
+
+          <div class="vc-del-col">
+            <button class="danger" onclick="removerVendedor(${i})" title="Remover vendedora">×</button>
+          </div>
         `;
         container.appendChild(div);
       });
     }
 
     function addVendedor() {
-      vendedores.push({ nome: '', foto: '', area: 'Trabalhista', meta_dia: 2, ativo: true });
+      const hoje = new Date().toISOString().slice(0, 10);
+      vendedores.push({
+        nome: '', foto: '', area: 'Trabalhista',
+        meta_dia: 2, meta_mes: 0, meta_conversao: 5,
+        data_entrada: hoje, data_saida: '',
+        ativo: true,
+      });
       renderVendedores();
     }
 
@@ -250,45 +439,104 @@
       renderVendedores();
     }
 
-    function setIntervalo(val) {
-      document.getElementById('intervalo-input').value = val;
-    }
-
-    async function salvarIntervalo() {
-      const seg = Number(document.getElementById('intervalo-input').value);
-      if (!seg || seg < 3 || seg > 120) return showMsg('Tempo inválido (3 a 120 segundos)', 'err');
+    async function salvarTempos() {
+      const dash = Number(document.getElementById('intervalo-dashboard-input').value);
+      const rank = Number(document.getElementById('intervalo-ranking-input').value);
+      if (!dash || dash < 5 || dash > 300) return showMsg('Tempo do dashboard inválido (5 a 300 segundos)', 'err');
+      if (!rank || rank < 5 || rank > 300) return showMsg('Tempo dos rankings inválido (5 a 300 segundos)', 'err');
       try {
-        const r = await postJSON('saveConfig', { intervaloSlide: seg });
-        if (r.success) showMsg(`Tempo salvo: ${seg} segundos por slide`);
+        const r = await postJSON('saveConfig', { intervaloDashboard: dash, intervaloRanking: rank });
+        if (r.success) showMsg(`Tempos salvos: Dashboard ${dash}s · Rankings ${rank}s`);
         else showMsg('Erro: ' + (r.error || 'desconhecido'), 'err');
       } catch (e) { showMsg('Erro: ' + e.message, 'err'); }
     }
 
-    async function salvarMetas() {
-      const metaTrab = Number(document.getElementById('meta-trab-input').value);
-      const metaServ = Number(document.getElementById('meta-serv-input').value);
-      if (!metaTrab || metaTrab < 1) return showMsg('Meta Trabalhista inválida', 'err');
-      if (!metaServ || metaServ < 1) return showMsg('Meta Servidor inválida', 'err');
+    async function salvarLayout() {
+      const sel = document.querySelector('input[name="ranking-layout"]:checked');
+      if (!sel) return showMsg('Escolha um layout', 'err');
       try {
-        const r = await postJSON('saveConfig', {
-          metaTrabalhista: metaTrab,
-          metaServidor: metaServ,
-        });
-        if (r.success) showMsg(`Metas salvas: Trabalhista ${metaTrab} · Servidor ${metaServ}`);
+        const r = await postJSON('saveConfig', { rankingLayout: sel.value });
+        if (r.success) showMsg(`Layout salvo: ${sel.value === 'cards' ? 'Cards' : 'Lista horizontal'}`);
         else showMsg('Erro: ' + (r.error || 'desconhecido'), 'err');
       } catch (e) { showMsg('Erro: ' + e.message, 'err'); }
+    }
+
+    async function salvarCelebracoes() {
+      const visual = document.getElementById('cel-visual').checked;
+      const som    = document.getElementById('cel-som').checked;
+      try {
+        const r = await postJSON('saveConfig', { celebracaoVisual: visual, celebracaoSom: som });
+        if (r.success) {
+          showMsg(`Celebrações salvas: visual ${visual ? 'ligada' : 'desligada'} · som ${som ? 'ligado' : 'desligado'}`);
+        } else {
+          showMsg('Erro: ' + (r.error || 'desconhecido'), 'err');
+        }
+      } catch (e) { showMsg('Erro: ' + e.message, 'err'); }
+    }
+
+    async function salvarLayoutConversao() {
+      const sel = document.querySelector('input[name="ranking-conv-layout"]:checked');
+      if (!sel) return showMsg('Escolha um layout', 'err');
+      try {
+        const r = await postJSON('saveConfig', { rankingConversaoLayout: sel.value });
+        if (r.success) showMsg(`Layout de conversão salvo: ${sel.value === 'cards' ? 'Cards' : 'Lista horizontal'}`);
+        else showMsg('Erro: ' + (r.error || 'desconhecido'), 'err');
+      } catch (e) { showMsg('Erro: ' + e.message, 'err'); }
+    }
+
+    // Visual da seleção (borda destacada no card escolhido)
+    function syncLayoutVisual() {
+      document.querySelectorAll('.layout-opt').forEach(el => {
+        const isChecked = el.querySelector('input').checked;
+        el.style.borderColor = isChecked ? 'var(--accent)' : 'var(--border)';
+        el.style.boxShadow   = isChecked ? '0 0 14px rgba(0,217,255,0.25)' : 'none';
+      });
+    }
+    function syncLayoutConvVisual() {
+      document.querySelectorAll('.layout-conv-opt').forEach(el => {
+        const isChecked = el.querySelector('input').checked;
+        el.style.borderColor = isChecked ? 'var(--accent)' : 'var(--border)';
+        el.style.boxShadow   = isChecked ? '0 0 14px rgba(0,217,255,0.25)' : 'none';
+      });
+    }
+    document.addEventListener('change', e => {
+      if (e.target && e.target.name === 'ranking-layout') syncLayoutVisual();
+      if (e.target && e.target.name === 'ranking-conv-layout') syncLayoutConvVisual();
+    });
+
+    function showMsgLocal(text, type = 'ok') {
+      const el = document.getElementById('msg-vendedores');
+      if (!el) return;
+      el.innerHTML = `<div class="msg ${type}">${text}</div>`;
+      setTimeout(() => { if (el) el.innerHTML = ''; }, 5000);
     }
 
     async function salvarVendedores() {
       // Validar
       for (const v of vendedores) {
-        if (!v.nome || !v.nome.trim()) return showMsg('Há vendedor sem nome', 'err');
+        if (!v.nome || !v.nome.trim()) {
+          showMsg('Há vendedor sem nome', 'err');
+          showMsgLocal('⚠ Há vendedor sem nome', 'err');
+          return;
+        }
       }
+      showMsgLocal('⏳ Salvando…');
       try {
         const r = await postJSON('saveVendedores', vendedores);
-        if (r.success) showMsg('Vendedores salvos: ' + r.total);
-        else showMsg('Erro: ' + (r.error || 'desconhecido'), 'err');
-      } catch (e) { showMsg('Erro: ' + e.message, 'err'); }
+        if (r.success) {
+          const txt = '✅ Lista salva com sucesso! (' + r.total + ' vendedor' + (r.total !== 1 ? 'es' : '') + ')';
+          showMsg(txt);
+          showMsgLocal(txt);
+        } else {
+          const err = 'Erro: ' + (r.error || 'desconhecido');
+          showMsg(err, 'err');
+          showMsgLocal(err, 'err');
+        }
+      } catch (e) {
+        const err = 'Erro de conexão: ' + e.message;
+        showMsg(err, 'err');
+        showMsgLocal(err, 'err');
+      }
     }
 
     async function testarConexao() {

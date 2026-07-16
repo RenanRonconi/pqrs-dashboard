@@ -781,14 +781,23 @@ h1, h2, h3 { font-weight: 800; letter-spacing: 0.02em; }
 }
 
 .rank-position {
-  font-size: 2.6rem; font-weight: 900;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 64px;
   text-align: center;
+}
+.rank-pos-num {
+  font-size: 2.6rem; font-weight: 900;
+  line-height: 1;
   background: linear-gradient(180deg, #fff, #6b7280);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
-.ranking-item.rank-1 .rank-position {
+.ranking-item.rank-1 .rank-pos-num {
   background: linear-gradient(180deg, var(--gold), #ff9800);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -1292,6 +1301,14 @@ h1, h2, h3 { font-weight: 800; letter-spacing: 0.02em; }
   margin-bottom: 12px;
   gap: 6px;
 }
+/* Agrupa número de posição + seta em coluna alinhada à esquerda */
+.vcard-pos-grp {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 4px;
+}
 .vcard-pos {
   font-size: 1.9rem;
   font-weight: 900;
@@ -1305,16 +1322,69 @@ h1, h2, h3 { font-weight: 800; letter-spacing: 0.02em; }
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+/* Seta 3D — layout cards */
 .vcard-arrow {
-  font-size: 0.85rem;
-  font-weight: 800;
-  padding: 2px 8px;
+  font-size: 1.25rem;
+  font-weight: 900;
+  padding: 4px 13px;
   border-radius: 100px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
 }
-.vcard-arrow.arr-up   { background: rgba(0,230,118,0.15); color: var(--green); }
-.vcard-arrow.arr-down { background: rgba(255,82,82,0.15); color: var(--red); }
-.vcard-arrow.arr-same { background: rgba(155,163,184,0.15); color: var(--text-dim); }
-.vcard-arrow.arr-new  { background: rgba(255,215,0,0.15); color: var(--gold); border: 1px solid var(--gold); font-size: 0.7rem; }
+.vcard-arrow.arr-up {
+  color: #00ff99;
+  background: linear-gradient(180deg, rgba(0,255,153,0.22) 0%, rgba(0,180,90,0.12) 100%);
+  border: 1px solid rgba(0,255,153,0.5);
+  box-shadow:
+    0 0 14px rgba(0,255,153,0.55),
+    inset 0 1px 0 rgba(255,255,255,0.25),
+    inset 0 -2px 0 rgba(0,80,40,0.4);
+  text-shadow:
+    0 1px 0 #009955,
+    0 2px 0 #006633,
+    0 3px 5px rgba(0,0,0,0.6),
+    0 0 12px rgba(0,255,153,1);
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+.vcard-arrow.arr-down {
+  color: #ff3355;
+  background: linear-gradient(180deg, rgba(255,51,85,0.22) 0%, rgba(180,0,30,0.12) 100%);
+  border: 1px solid rgba(255,51,85,0.5);
+  box-shadow:
+    0 0 14px rgba(255,51,85,0.55),
+    inset 0 1px 0 rgba(255,255,255,0.25),
+    inset 0 -2px 0 rgba(80,0,15,0.4);
+  text-shadow:
+    0 1px 0 #aa0022,
+    0 2px 0 #770011,
+    0 3px 5px rgba(0,0,0,0.6),
+    0 0 12px rgba(255,51,85,1);
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+.vcard-arrow.arr-same {
+  color: #c0c8e0;
+  background: linear-gradient(180deg, rgba(192,200,224,0.16) 0%, rgba(90,96,128,0.08) 100%);
+  border: 1px solid rgba(192,200,224,0.35);
+  box-shadow:
+    0 0 8px rgba(192,200,224,0.25),
+    inset 0 1px 0 rgba(255,255,255,0.12);
+  text-shadow:
+    0 1px 0 #4a5070,
+    0 2px 4px rgba(0,0,0,0.5),
+    0 0 8px rgba(192,200,224,0.5);
+  font-size: 1.0rem;
+}
+.vcard-arrow.arr-new {
+  color: var(--gold);
+  background: rgba(255,215,0,0.16);
+  border: 1px solid var(--gold);
+  font-size: 0.78rem;
+  box-shadow: 0 0 12px rgba(255,215,0,0.5), inset 0 0 6px rgba(255,215,0,0.1);
+  text-shadow: 0 0 10px rgba(255,215,0,0.9);
+}
 .vcard-pace {
   font-size: 0.72rem;
   font-weight: 800;
@@ -1579,27 +1649,57 @@ h1, h2, h3 { font-weight: 800; letter-spacing: 0.02em; }
   display: inline;
 }
 
-/* Seta de posição (subiu/desceu/igual) */
-.rank-position { position: relative; }
+/* Seta de posição (subiu/desceu/igual/novo) — layout horizontal */
 .rank-arrow {
-  display: block;
-  font-size: 0.75rem;
-  font-weight: 800;
-  margin-top: 2px;
-  letter-spacing: 0.05em;
+  font-size: 1.2rem;
+  font-weight: 900;
   -webkit-text-fill-color: initial;
   background: none;
+  line-height: 1;
 }
-.arr-up    { color: var(--green); }
-.arr-down  { color: var(--red); }
-.arr-same  { color: var(--text-dim); }
-.arr-new   {
+.arr-up {
+  color: #00ff99;
+  display: inline-block;
+  text-shadow:
+    0 1px 0 #009955,
+    0 2px 0 #006633,
+    0 3px 5px rgba(0,0,0,0.7),
+    0 0 14px rgba(0,255,153,1),
+    0 0 30px rgba(0,255,153,0.6);
+  filter: drop-shadow(0 0 5px rgba(0,255,153,0.9));
+  transform: translateY(-1px);
+}
+.arr-down {
+  color: #ff3355;
+  display: inline-block;
+  text-shadow:
+    0 1px 0 #aa0022,
+    0 2px 0 #770011,
+    0 3px 5px rgba(0,0,0,0.7),
+    0 0 14px rgba(255,51,85,1),
+    0 0 30px rgba(255,51,85,0.6);
+  filter: drop-shadow(0 0 5px rgba(255,51,85,0.9));
+  transform: translateY(1px);
+}
+.arr-same {
+  color: #c0c8e0;
+  display: inline-block;
+  font-size: 0.95rem;
+  text-shadow:
+    0 1px 0 #5a6080,
+    0 2px 4px rgba(0,0,0,0.6),
+    0 0 10px rgba(192,200,224,0.5);
+  filter: drop-shadow(0 0 3px rgba(192,200,224,0.5));
+}
+.arr-new {
   color: var(--gold);
-  font-size: 0.65rem;
-  padding: 1px 6px;
+  font-size: 0.72rem;
+  padding: 2px 8px;
   border: 1px solid var(--gold);
   border-radius: 100px;
   display: inline-block;
+  text-shadow: 0 0 10px rgba(255,215,0,0.9);
+  box-shadow: 0 0 10px rgba(255,215,0,0.5), inset 0 0 6px rgba(255,215,0,0.1);
 }
 
 /* Streak 🔥 */
@@ -1708,4 +1808,84 @@ h1, h2, h3 { font-weight: 800; letter-spacing: 0.02em; }
 @keyframes hatTrickRotate {
   from { transform: rotate(-12deg) scale(1); }
   to   { transform: rotate(12deg) scale(1.2); }
+}
+
+/* ============================================================
+   SLIDE 3 — RANKING POR CONVERSÃO
+   ============================================================ */
+
+/* Ícone "%" no cabeçalho do slide */
+.slide-icon-conv {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  background: linear-gradient(135deg, var(--green), var(--accent));
+  border-radius: 10px;
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #000;
+  -webkit-text-fill-color: #000;
+  margin-right: 6px;
+  vertical-align: middle;
+  box-shadow: 0 0 16px rgba(0,230,118,0.45);
+  flex-shrink: 0;
+}
+
+/* Container do slide de conversão preenche o espaço disponível */
+#slide-conversao #conversao-list.ranking-cards-grid {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+  align-content: start;
+}
+#slide-conversao #conversao-list.ranking-list {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Número grande de conversão no card */
+.conv-big-pct {
+  font-size: 2.8rem;
+  font-weight: 900;
+  line-height: 1;
+  margin: 4px 0 12px;
+  letter-spacing: -0.02em;
+}
+.vcard.area-trab .conv-big-pct {
+  background: linear-gradient(160deg, #ffffff 20%, var(--green) 60%, var(--trabalhista) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 8px rgba(0,230,118,0.4));
+}
+.vcard.area-serv .conv-big-pct {
+  background: linear-gradient(160deg, #ffffff 20%, var(--green) 60%, var(--servidor) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 8px rgba(0,230,118,0.4));
+}
+.vcard.rank-1 .conv-big-pct {
+  background: linear-gradient(160deg, #fff8d6 0%, var(--gold) 55%, #ff9800 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 12px rgba(255,215,0,0.6));
+  font-size: 3.2rem;
+}
+
+/* Badge "CONVERSÃO" no cabeçalho do card */
+.conv-rank-label {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: var(--green);
+  background: rgba(0,230,118,0.12);
+  border: 1px solid rgba(0,230,118,0.35);
+  padding: 3px 9px;
+  border-radius: 100px;
 }
