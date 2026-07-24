@@ -52,6 +52,17 @@ function fotoSVG(letra, cor) {
   return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect fill='%231c2138' width='200' height='200'/%3E%3Ctext x='100' y='130' font-size='90' font-family='Arial' text-anchor='middle' fill='${c}' font-weight='bold'%3E${l}%3C/text%3E%3C/svg%3E`;
 }
 
+/**
+ * Nome exibido na tela. O campo `nome` continua sendo o do Pipedrive (usado para
+ * casar os contratos); `nome_exibicao` é o nome opcional configurado para mostrar
+ * no dashboard quando a conta do Pipedrive é de outra pessoa.
+ */
+function nomeDisp(v) {
+  if (!v) return '';
+  const n = (v.nome_exibicao || '').trim();
+  return n || v.nome || '';
+}
+
 function areaClass(area) {
   return (area && area.toLowerCase().includes('servidor')) ? 'area-serv' : 'area-trab';
 }
@@ -248,17 +259,18 @@ function renderMiniRank(containerId, ranking, areaKey) {
   const cor = areaKey === 'serv' ? '#ff6b35' : '#00d9ff';
 
   filtrado.forEach((v, i) => {
+    const nome = nomeDisp(v);
     const fotoUrl = fixDriveUrl(v.foto);
-    const fb = fotoSVG(v.nome[0], cor);
+    const fb = fotoSVG(nome[0] || '?', cor);
     const streakHtml = (v.streak || 0) >= 2
       ? `<span class="ami-streak">🔥${v.streak}</span>` : '';
     const row = document.createElement('div');
     row.className = 'ami-row';
     row.innerHTML = `
       <div class="ami-medal">${medals[i] || ''}</div>
-      <img class="ami-foto" src="${fotoUrl}" data-fallback="${fb}" alt="${v.nome}">
+      <img class="ami-foto" src="${fotoUrl}" data-fallback="${fb}" alt="${nome}">
       <div class="ami-nomewrap">
-        <div class="ami-nome">${v.nome} ${streakHtml}</div>
+        <div class="ami-nome">${nome} ${streakHtml}</div>
         <div class="ami-conv">Conversão: <strong>${v.conversao.toFixed(1)}%</strong></div>
       </div>
       <div class="ami-num">${v.contratos.mes}</div>
@@ -320,10 +332,11 @@ function renderRanking(ranking) {
     const pos = i + 1;
     const metaMes = v.meta_mes || ((v.meta_dia || 2) * 22);
     const pct = Math.min(100, (v.contratos.mes / Math.max(1, metaMes)) * 100);
+    const nome = nomeDisp(v);
     const cls = areaClass(v.area);
     const cor = cls === 'area-serv' ? '#ff6b35' : '#00d9ff';
     const fotoUrl = fixDriveUrl(v.foto);
-    const fotoFallback = fotoSVG(v.nome[0], cor);
+    const fotoFallback = fotoSVG(nome[0] || '?', cor);
 
     const pace  = paceStatus(v.contratos.mes, metaMes, diasDecorrido, diasTotal);
     const badges = badgesVendedora(v, pos);
@@ -334,16 +347,16 @@ function renderRanking(ranking) {
     if (pos > 1) {
       const acima = ranking[i - 1];
       const diff = acima.contratos.mes - v.contratos.mes;
-      if (diff === 0)      chase = `Empatada com <strong>${acima.nome}</strong> — próximo contrato assume o ${pos - 1}º`;
-      else if (diff === 1) chase = `A <strong>1</strong> de alcançar <strong>${acima.nome}</strong>`;
-      else                 chase = `A <strong>${diff}</strong> de ultrapassar <strong>${acima.nome}</strong>`;
+      if (diff === 0)      chase = `Empatada com <strong>${nomeDisp(acima)}</strong> — próximo contrato assume o ${pos - 1}º`;
+      else if (diff === 1) chase = `A <strong>1</strong> de alcançar <strong>${nomeDisp(acima)}</strong>`;
+      else                 chase = `A <strong>${diff}</strong> de ultrapassar <strong>${nomeDisp(acima)}</strong>`;
     } else {
       const abaixo = ranking[i + 1];
       if (abaixo) {
         const gap = v.contratos.mes - abaixo.contratos.mes;
         chase = gap > 0
-          ? `<strong>${gap}</strong> à frente de <strong>${abaixo.nome}</strong>`
-          : `<strong>${abaixo.nome}</strong> empatada — defenda o topo!`;
+          ? `<strong>${gap}</strong> à frente de <strong>${nomeDisp(abaixo)}</strong>`
+          : `<strong>${nomeDisp(abaixo)}</strong> empatada — defenda o topo!`;
       }
     }
 
@@ -363,10 +376,10 @@ function renderRanking(ranking) {
         <span class="rank-pos-num">${pos}°</span>
         <span class="rank-arrow ${arrow.cls}">${arrow.txt}</span>
       </div>
-      <img class="rank-foto" src="${fotoUrl}" data-fallback="${fotoFallback}" alt="${v.nome}">
+      <img class="rank-foto" src="${fotoUrl}" data-fallback="${fotoFallback}" alt="${nome}">
       <div class="rank-info">
         <div class="rank-nome-line">
-          <span class="rank-nome">${v.nome}</span>
+          <span class="rank-nome">${nome}</span>
           ${streakHtml}
           ${badgesHtml}
           ${areaBadge(v.area)}
@@ -408,10 +421,11 @@ function renderRankingCards(ranking) {
     const pos = i + 1;
     const metaMes = v.meta_mes || ((v.meta_dia || 2) * 22);
     const pct = Math.min(100, (v.contratos.mes / Math.max(1, metaMes)) * 100);
+    const nome = nomeDisp(v);
     const cls = areaClass(v.area);
     const cor = cls === 'area-serv' ? '#ff6b35' : '#00d9ff';
     const fotoUrl = fixDriveUrl(v.foto);
-    const fotoFallback = fotoSVG(v.nome[0], cor);
+    const fotoFallback = fotoSVG(nome[0] || '?', cor);
 
     const pace = paceStatus(v.contratos.mes, metaMes, diasDecorrido, diasTotal);
     const badges = badgesVendedora(v, pos);
@@ -421,16 +435,16 @@ function renderRankingCards(ranking) {
     if (pos > 1) {
       const acima = ranking[i - 1];
       const diff = acima.contratos.mes - v.contratos.mes;
-      if (diff === 0)      chase = `Empatada com <strong>${acima.nome}</strong>`;
-      else if (diff === 1) chase = `A <strong>1</strong> de alcançar <strong>${acima.nome.split(' ')[0]}</strong>`;
-      else                 chase = `A <strong>${diff}</strong> de ultrapassar <strong>${acima.nome.split(' ')[0]}</strong>`;
+      if (diff === 0)      chase = `Empatada com <strong>${nomeDisp(acima)}</strong>`;
+      else if (diff === 1) chase = `A <strong>1</strong> de alcançar <strong>${nomeDisp(acima).split(' ')[0]}</strong>`;
+      else                 chase = `A <strong>${diff}</strong> de ultrapassar <strong>${nomeDisp(acima).split(' ')[0]}</strong>`;
     } else {
       const abaixo = ranking[i + 1];
       if (abaixo) {
         const gap = v.contratos.mes - abaixo.contratos.mes;
         chase = gap > 0
-          ? `<strong>${gap}</strong> à frente de <strong>${abaixo.nome.split(' ')[0]}</strong>`
-          : `<strong>${abaixo.nome.split(' ')[0]}</strong> empatada — defenda!`;
+          ? `<strong>${gap}</strong> à frente de <strong>${nomeDisp(abaixo).split(' ')[0]}</strong>`
+          : `<strong>${nomeDisp(abaixo).split(' ')[0]}</strong> empatada — defenda!`;
       }
     }
 
@@ -454,11 +468,11 @@ function renderRankingCards(ranking) {
       </div>
 
       <div class="vcard-photo-wrap">
-        <img class="vcard-photo" src="${fotoUrl}" data-fallback="${fotoFallback}" alt="${v.nome}">
+        <img class="vcard-photo" src="${fotoUrl}" data-fallback="${fotoFallback}" alt="${nome}">
         ${streakHtml}
       </div>
 
-      <div class="vcard-name">${v.nome}</div>
+      <div class="vcard-name">${nome}</div>
       <div class="vcard-area">${areaBadge(v.area)}</div>
 
       ${badgesHtml ? `<div class="vcard-badges">${badgesHtml}</div>` : '<div class="vcard-badges-spacer"></div>'}
@@ -529,15 +543,15 @@ function _buildConvChase(ordenado, i, pos) {
     const acima = ordenado[i - 1];
     const diff = (acima.conversao - ordenado[i].conversao).toFixed(1);
     return diff === '0.0'
-      ? `Empatada com <strong>${acima.nome.split(' ')[0]}</strong>`
-      : `A <strong>${diff}%</strong> de alcançar <strong>${acima.nome.split(' ')[0]}</strong>`;
+      ? `Empatada com <strong>${nomeDisp(acima).split(' ')[0]}</strong>`
+      : `A <strong>${diff}%</strong> de alcançar <strong>${nomeDisp(acima).split(' ')[0]}</strong>`;
   }
   const abaixo = ordenado[i + 1];
   if (abaixo) {
     const gap = (ordenado[i].conversao - abaixo.conversao).toFixed(1);
     return Number(gap) > 0
-      ? `<strong>${gap}%</strong> à frente de <strong>${abaixo.nome.split(' ')[0]}</strong>`
-      : `<strong>${abaixo.nome.split(' ')[0]}</strong> empatada — defenda!`;
+      ? `<strong>${gap}%</strong> à frente de <strong>${nomeDisp(abaixo).split(' ')[0]}</strong>`
+      : `<strong>${nomeDisp(abaixo).split(' ')[0]}</strong> empatada — defenda!`;
   }
   return '';
 }
@@ -545,10 +559,11 @@ function _buildConvChase(ordenado, i, pos) {
 function _renderConversaoCards(container, ordenado) {
   ordenado.forEach((v, i) => {
     const pos = i + 1;
+    const nome = nomeDisp(v);
     const cls = areaClass(v.area);
     const cor = cls === 'area-serv' ? '#ff6b35' : '#00d9ff';
     const fotoUrl = fixDriveUrl(v.foto);
-    const fotoFallback = fotoSVG(v.nome[0], cor);
+    const fotoFallback = fotoSVG(nome[0] || '?', cor);
     const metaConv = Number(v.meta_conversao) || 0;
     const pctMeta = metaConv > 0 ? Math.min(100, (v.conversao / metaConv) * 100) : 0;
     const pace  = convPaceStatus(v.conversao, metaConv);
@@ -564,10 +579,10 @@ function _renderConversaoCards(container, ordenado) {
       </div>
 
       <div class="vcard-photo-wrap">
-        <img class="vcard-photo" src="${fotoUrl}" data-fallback="${fotoFallback}" alt="${v.nome}">
+        <img class="vcard-photo" src="${fotoUrl}" data-fallback="${fotoFallback}" alt="${nome}">
       </div>
 
-      <div class="vcard-name">${v.nome}</div>
+      <div class="vcard-name">${nome}</div>
       <div class="vcard-area">${areaBadge(v.area)}</div>
 
       <div class="conv-big-pct">${v.conversao.toFixed(1)}%</div>
@@ -594,10 +609,11 @@ function _renderConversaoCards(container, ordenado) {
 function _renderConversaoHorizontal(container, ordenado) {
   ordenado.forEach((v, i) => {
     const pos = i + 1;
+    const nome = nomeDisp(v);
     const cls = areaClass(v.area);
     const cor = cls === 'area-serv' ? '#ff6b35' : '#00d9ff';
     const fotoUrl = fixDriveUrl(v.foto);
-    const fotoFallback = fotoSVG(v.nome[0], cor);
+    const fotoFallback = fotoSVG(nome[0] || '?', cor);
     const metaConv = Number(v.meta_conversao) || 0;
     const pctMeta = metaConv > 0 ? Math.min(100, (v.conversao / metaConv) * 100) : 0;
     const pace  = convPaceStatus(v.conversao, metaConv);
@@ -608,10 +624,10 @@ function _renderConversaoHorizontal(container, ordenado) {
     item.style.animationDelay = (i * 0.1) + 's';
     item.innerHTML = `
       <div class="rank-position"><span class="rank-pos-num">${pos}°</span></div>
-      <img class="rank-foto" src="${fotoUrl}" data-fallback="${fotoFallback}" alt="${v.nome}">
+      <img class="rank-foto" src="${fotoUrl}" data-fallback="${fotoFallback}" alt="${nome}">
       <div class="rank-info">
         <div class="rank-nome-line">
-          <span class="rank-nome">${v.nome}</span>
+          <span class="rank-nome">${nome}</span>
           ${areaBadge(v.area)}
         </div>
         <div class="rank-chase">${chase}</div>
@@ -788,12 +804,13 @@ async function celebrate(ev) {
   let metaMes = 0;
   let totalMes = '— no mês';
   let fotoUrl = '';
-  const fotoFallback = fotoSVG((ev.vendedor || '?')[0], '#ffd700');
+  let nomeExibido = ev.vendedor || 'Vendedor';
 
   if (lastData && lastData.ranking) {
     const candidatos = lastData.ranking.filter(x => x.nome === ev.vendedor);
     const v = candidatos.find(x => areaClass(x.area) === areaEvento) || candidatos[0];
     if (v) {
+      nomeExibido = nomeDisp(v);
       // lastData já reflete o contrato recém-fechado, então NÃO somamos +1.
       contratosHoje   = Math.max(v.contratos.dia || 0, 1);
       contratosSemana = v.contratos.semana || 0;
@@ -804,6 +821,8 @@ async function celebrate(ev) {
       fotoUrl = fixDriveUrl(v.foto);
     }
   }
+
+  const fotoFallback = fotoSVG(nomeExibido[0] || '?', '#ffd700');
 
   // Meta semanal: config só tem meta/dia e meta/mês, então derivamos a da semana
   // como meta/dia × 5 dias úteis.
@@ -843,7 +862,7 @@ async function celebrate(ev) {
     const emojiEl = cel.querySelector('.celebracao-emoji');
     if (emojiEl) emojiEl.textContent = emoji;
 
-    setText('cel-nome', ev.vendedor || 'Vendedor');
+    setText('cel-nome', nomeExibido);
     setText('cel-negocio', ev.negocio || '');
     setText('cel-funil', ev.funil || '');
     setText('cel-total', totalMes);

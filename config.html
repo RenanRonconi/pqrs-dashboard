@@ -68,7 +68,7 @@
       gap: 8px;
       align-items: end;
     }
-    .vendedor-card .vc-row-top { grid-area: top-fields; grid-template-columns: 1.4fr 1.6fr 1fr; }
+    .vendedor-card .vc-row-top { grid-area: top-fields; grid-template-columns: 1.2fr 1.2fr 1.5fr 1fr; }
     .vendedor-card .vc-row-mid { grid-area: mid-fields; grid-template-columns: 1fr 1fr 1fr; }
     .vendedor-card .vc-row-bot { grid-area: bot-fields; grid-template-columns: 1fr 1fr; }
     .vendedor-card .vc-field { display: flex; flex-direction: column; gap: 3px; }
@@ -253,7 +253,8 @@
       <h2>👥 Vendedoras</h2>
       <p style="color:var(--text-dim); margin-bottom:20px;">
         O nome deve bater <strong>exatamente</strong> com o nome do usuário no Pipedrive.<br>
-        <span style="font-size:0.85rem;">💡 <strong>Meta/dia</strong>: usada na gamificação (2 contratos = meta do dia batida = comemoração maior).<br>
+        <span style="font-size:0.85rem;">💡 <strong>Nome no dashboard</strong>: use quando a pessoa trabalha em uma conta do Pipedrive de outro nome. Vazio = mostra o nome do Pipedrive.<br>
+        💡 <strong>Meta/dia</strong>: usada na gamificação (2 contratos = meta do dia batida = comemoração maior).<br>
         💡 <strong>Meta/mês</strong>: deixe vazio para usar automaticamente <em>meta/dia × 22 dias úteis</em>.</span>
       </p>
       <div id="vendedores-list"></div>
@@ -376,6 +377,10 @@
               <input type="text" value="${v.nome || ''}" placeholder="Nome" oninput="vendedores[${i}].nome=this.value">
             </div>
             <div class="vc-field">
+              <label title="Deixe vazio para usar o nome do Pipedrive">Nome no dashboard (opcional)</label>
+              <input type="text" value="${v.nome_exibicao || ''}" placeholder="usa o do Pipedrive" oninput="vendedores[${i}].nome_exibicao=this.value">
+            </div>
+            <div class="vc-field">
               <label>URL da foto</label>
               <input type="text" value="${v.foto || ''}" placeholder="https://..." oninput="vendedores[${i}].foto=this.value; const img=this.closest('.vendedor-card').querySelector('.vc-foto'); img.src=this.value?fixDriveUrl(this.value):'${PLACEHOLDER_FOTO}'; img.onerror=()=>img.src='${PLACEHOLDER_FOTO}';">
             </div>
@@ -425,7 +430,7 @@
     function addVendedor() {
       const hoje = new Date().toISOString().slice(0, 10);
       vendedores.push({
-        nome: '', foto: '', area: 'Trabalhista',
+        nome: '', nome_exibicao: '', foto: '', area: 'Trabalhista',
         meta_dia: 2, meta_mes: 0, meta_conversao: 5,
         data_entrada: hoje, data_saida: '',
         ativo: true,
