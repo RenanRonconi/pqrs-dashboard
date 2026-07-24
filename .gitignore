@@ -6,6 +6,9 @@ node_modules/
 *.log
 Thumbs.db
 
+# Pasta gerada para publicar no Netlify (cópia dos arquivos públicos)
+publicar/
+
 # Código do Apps Script (contém a chave da API do Pipedrive — nunca versionar)
 apps-script.js
 code.gs
