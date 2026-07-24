@@ -247,7 +247,7 @@ function renderMiniRank(containerId, ranking, areaKey) {
   const filtrado = ranking
     .filter(v => areaClass(v.area) === (areaKey === 'serv' ? 'area-serv' : 'area-trab'))
     .sort((a, b) => b.contratos.mes - a.contratos.mes)
-    .slice(0, 3);
+    .slice(0, 4);
 
   container.innerHTML = '';
   if (filtrado.length === 0) {
@@ -255,7 +255,7 @@ function renderMiniRank(containerId, ranking, areaKey) {
     return;
   }
 
-  const medals = ['🥇', '🥈', '🥉'];
+  const medals = ['🥇', '🥈', '🥉', '4º'];
   const cor = areaKey === 'serv' ? '#ff6b35' : '#00d9ff';
 
   filtrado.forEach((v, i) => {
